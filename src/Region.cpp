@@ -159,6 +159,12 @@ Apollo::Region::Region(
             model = ModelFactory::createRoundRobin(apollo->num_policies);
             //std::cout << "Model RoundRobin" << std::endl;
         }
+#ifdef FULL_EXPLORE
+        else if ("FullExplore" == model_str)
+        {
+            model = ModelFactory::createFullExplore(apollo->num_policies);
+        }
+#endif
         else
         {
             std::cerr << "Invalid model env var: " + Config::APOLLO_INIT_MODEL << std::endl;
@@ -243,15 +249,20 @@ Apollo::Region::collectContext(Apollo::RegionContext *context, double metric)
 {
   // std::cout << "COLLECT CONTEXT " << context->idx << " REGION " << name \
             << " metric " << metric << std::endl;
-  auto iter = measures.find({context->features, context->policy});
-  if (iter == measures.end()) {
-    iter = measures
+
+    // Check if we already have seen this feature+policy combination.
+    // If we have, add to the total_time for its measure, otherwise
+    // create a new measurement for it.
+    auto iter = measures.find({context->features, context->policy});
+    if (iter == measures.end()) {
+      iter = measures
                .insert(std::make_pair(
                    std::make_pair(context->features, context->policy),
                    std::move(
                        std::make_unique<Apollo::Region::Measure>(1, metric))))
                .first;
-    } else {
+    } 
+    else {
         iter->second->exec_count++;
         iter->second->time_total += metric;
     }
