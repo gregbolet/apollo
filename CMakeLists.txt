@@ -175,7 +175,10 @@ endif()
 
 ##### GREG added
 #
-add_definitions(-DFULL_EXPLORE)
+option(ENABLE_FULL_EXPLORE "Enabled the Full Exploration Policy" ON)
+if(ENABLE_FULL_EXPLORE)
+  add_definitions(-DFULL_EXPLORE)
+endif()
 #
 ##### End of GREG added
 

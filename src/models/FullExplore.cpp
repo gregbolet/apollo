@@ -27,7 +27,6 @@ FullExplore::getIndex(std::vector<float> &features)
     policies[ features ] = ( policies[ features ] + 1) % policy_count;
 
     return choice;
-#endif
 }
 
 FullExplore::FullExplore(int num_policies)
