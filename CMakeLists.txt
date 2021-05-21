@@ -45,7 +45,8 @@ set(CMAKE_CXX_STANDARD 14)
 #
 # Options
 #
-option(ENABLE_MPI "Require and enabled MPI for collective training?" ON)
+option(ENABLE_MPI "Require and enabled MPI for collective training?" OFF)
+option(ENABLE_PERF_CNTRS "Require and enabled performance counter monitoring?" OFF)
 #
 set(APOLLO_ENABLE_TESTS    OFF  CACHE STRING "")
 set(APOLLO_RPATH_OVERRIDES ON  CACHE STRING "")
@@ -173,6 +174,29 @@ if (ENABLE_MPI)
     endif()
 endif()
 
+##### GREG added
+#
+option(ENABLE_FULL_EXPLORE "Enabled the Full Exploration Policy" ON)
+if(ENABLE_FULL_EXPLORE)
+  add_definitions(-DFULL_EXPLORE)
+endif()
+#
+##### End of GREG added
+
+if(ENABLE_PERF_CNTRS)
+    add_definitions(-DPERF_CNTR_MODE)
+
+    #find_package(PAPI REQUIRED)
+
+    # Supply the PAPI library path
+    if(PAPI_DIR)
+        message(STATUS "Given PAPI_DIR!")
+        include_directories(${PAPI_DIR}/include ${PAPI_DIR}/lib)
+
+        add_library(papi SHARED IMPORTED)
+    endif()
+endif()
+
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
@@ -205,6 +229,7 @@ add_subdirectory(src)
 if(APOLLO_ENABLE_TESTS)
     add_subdirectory(test)
 endif(APOLLO_ENABLE_TESTS)
+
 
 #
 # EOF

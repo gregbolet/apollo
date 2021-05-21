@@ -16,6 +16,8 @@
 #include <mpi.h>
 #endif //ENABLE_MPI
 
+#include "apollo/perfcntrs/PapiCounters.h"
+
 class Apollo::Region {
     public:
         Region(
@@ -24,6 +26,16 @@ class Apollo::Region {
                 int           numAvailablePolicies,
                 Apollo::CallbackDataPool *callbackPool = nullptr,
                 const std::string &modelYamlFile="");
+
+        Region(
+                const int    num_features,
+                const char   *regionName,
+                int           numAvailablePolicies,
+                std::vector<std::string> papi_cntr_events,
+                int isMultiplexed,
+                Apollo::CallbackDataPool *callbackPool = nullptr,
+                const std::string &modelYamlFile="");
+
         ~Region();
 
         typedef struct Measure {
@@ -63,12 +75,34 @@ class Apollo::Region {
         std::map<
             std::pair< std::vector<float>, int >,
             std::unique_ptr<Apollo::Region::Measure> > measures;
-        //^--Explanation: < features, policy >, value: < time measurement >
+        //^--Explanation--> key: < features, policy >, value: < time measurement >
 
         std::unique_ptr<TimingModel> time_model;
         std::unique_ptr<PolicyModel> model;
 
+        void apolloThreadBegin();
+        void apolloThreadEnd();
+        int queryPolicyModel(std::vector<float> feats);
+        void initRegion(
+                const int    num_features,
+                const char   *regionName,
+                int           numAvailablePolicies,
+                Apollo::CallbackDataPool *callbackPool = nullptr,
+                const std::string &modelYamlFile="");
+
+        Apollo::PapiCounters* papiPerfCnt;
+        std::vector<float> lastFeats;
+        std::map<
+            std::vector<float>, 
+            std::vector<float>
+            > feats_to_cntr_vals;
+        int shouldRunCounters; // flag to turn off/on counter monitoring
+
+        void collectPendingContexts();
+        void train(int step);
     private:
+
+
         //
         Apollo        *apollo;
         // DEPRECATED wil be removed
@@ -77,17 +111,18 @@ class Apollo::Region {
         std::ofstream trace_file;
 
         std::vector<Apollo::RegionContext *> pending_contexts;
-        void collectPendingContexts();
         void collectContext(Apollo::RegionContext *, double);
+
+
 }; // end: Apollo::Region
 
 struct Apollo::RegionContext
 {
-    std::chrono::steady_clock::time_point exec_time_begin;
-    std::chrono::steady_clock::time_point exec_time_end;
+    double exec_time_begin;
+    double exec_time_end;
     std::vector<float> features;
     int policy;
-    int idx;
+    unsigned long long idx;
     // Arguments: void *data, bool *returnMetric, double *metric (valid if
     // returnsMetric == true).
     bool (*isDoneCallback)(void *, bool *, double *);

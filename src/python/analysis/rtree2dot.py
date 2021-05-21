@@ -48,24 +48,42 @@ def parse_tree(tid, tree):
         dot += 'tree_%d_d_%d_n_%d [ label=\"' % (tid, depth, i)
         dot += parse_node(node)
         dot += '\" ];\n'
+
+    print('num nodes', treenodes.size())
+
     # Create edges.
     stack = [(0,0)]
+    print('start', stack)
+
+    # Visit each node
     for i in range(1, treenodes.size()):
         node = treenodes.at(i)
         depth = int( node.getNode('depth').real() )
+
+        print('stat:', depth, i)
+
         (j, d) = stack.pop()
         while d >= depth:
             (j, d) = stack.pop()
+            
+        #print('post-popping:', stack)
 
         dot += 'tree_%d_d_%d_n_%d -> '%(tid, d, j)
         dot += 'tree_%d_d_%d_n_%d;\n'%(tid, depth, i);
+        print('before before', stack)
         stack.append((j,d))
+
+        print('before', stack)
+        
         # append node if there are more nodes to traverse.
         if i < treenodes.size() - 1:
             stack.append((i,depth))
+            print('triggered')
+
+        print('after', stack)
 
     (j,d) = stack.pop()
-    assert((j,d) == (0,0))
+    #assert((j,d) == (0,0))
 
     return dot
 

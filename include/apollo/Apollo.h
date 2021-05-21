@@ -27,6 +27,9 @@ class Apollo
         struct RegionContext;
         struct CallbackDataPool;
 
+        class PerfCounter;
+        class PapiCounters;
+
         //TODO(cdw): This is serving as an override that is defined by an
         //           environment variable.  Apollo::Region's are able to
         //           have different policy counts, so a global setting here
@@ -49,7 +52,11 @@ class Apollo
         std::string getCallpathOffset(int walk_distance=2);
         void *callpath_ptr;
 
+        int getRegionExecutions() {return (int) region_executions;};
+
+        // DEPRECATED, use train.
         void flushAllRegionMeasurements(int step);
+        void train(int step);
 
     private:
         Apollo();

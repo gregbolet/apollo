@@ -35,7 +35,6 @@
 #include <fstream>
 #include <iomanip>
 #include <ctime>
-#include <chrono>
 #include <memory>
 #include <utility>
 #include <algorithm>
@@ -55,10 +54,116 @@
 #include <mpi.h>
 #endif //ENABLE_MPI
 
+static inline bool fileExists(std::string path) {
+    struct stat stbuf;
+    return (stat(path.c_str(), &stbuf) == 0);
+}
+
+void Apollo::Region::train(int step)
+{
+
+//#ifdef PERF_CNTR_MODE
+  //// If we ran the performance counters, don't add the data to training
+  //if(this->shouldRunCounters) {
+      //std::cout << "skipping training!" << std::endl;
+      //std::cout.flush();
+      //return;
+  //}
+  //else{
+      //std::cout << "DOING training!" << std::endl;
+      //std::cout.flush();
+  //}
+//#endif
+
+  if (!model->training) return;
+
+  collectPendingContexts();
+  reduceBestPolicies(step);
+  if (best_policies.size() <= 0) return;
+
+  measures.clear();
+
+  std::vector<std::vector<float> > train_features;
+  std::vector<int> train_responses;
+
+  std::vector<std::vector<float> > train_time_features;
+  std::vector<float> train_time_responses;
+
+  if (Config::APOLLO_REGION_MODEL) {
+    std::cout << "TRAIN MODEL PER REGION " << name << std::endl;
+    // Prepare training data
+    for (auto &it2 : best_policies) {
+      train_features.push_back(it2.first);
+      train_responses.push_back(it2.second.first);
+
+      std::vector<float> feature_vector = it2.first;
+      feature_vector.push_back(it2.second.first);
+      if (Config::APOLLO_RETRAIN_ENABLE) {
+        train_time_features.push_back(feature_vector);
+        train_time_responses.push_back(it2.second.second);
+      }
+    }
+  } else {
+      assert(false && "Expected per-region model.");
+  }
+
+  if (Config::APOLLO_TRACE_BEST_POLICIES) {
+    std::stringstream trace_out;
+    trace_out << "=== Rank " << apollo->mpiRank << " BEST POLICIES Region "
+              << name << " ===" << std::endl;
+    for (auto &b : best_policies) {
+      trace_out << "[ ";
+      for (auto &f : b.first)
+        trace_out << (int)f << ", ";
+      trace_out << "] P:" << b.second.first << " T: " << b.second.second
+                << std::endl;
+    }
+    trace_out << ".-" << std::endl;
+    std::cout << trace_out.str();
+    std::ofstream fout("step-" + std::to_string(step) + "-rank-" +
+                       std::to_string(apollo->mpiRank) + "-" + name +
+                       "-best_policies.txt");
+    fout << trace_out.str();
+    fout.close();
+  }
+
+  model = ModelFactory::createDecisionTree(apollo->num_policies,
+                                           train_features,
+                                           train_responses);
+
+  if (Config::APOLLO_RETRAIN_ENABLE)
+    time_model = ModelFactory::createRegressionTree(train_time_features,
+                                                    train_time_responses);
+
+  if (Config::APOLLO_STORE_MODELS) {
+    model->store("dtree-step-" + std::to_string(step) + "-rank-" +
+                 std::to_string(apollo->mpiRank) + "-" + name + ".yaml");
+    model->store(
+        "dtree-latest"
+        "-rank-" +
+        std::to_string(apollo->mpiRank) + "-" + name + ".yaml");
+
+    if (Config::APOLLO_RETRAIN_ENABLE) {
+      time_model->store("regtree-step-" + std::to_string(step) + "-rank-" +
+                        std::to_string(apollo->mpiRank) + "-" + name + ".yaml");
+      time_model->store(
+          "regtree-latest"
+          "-rank-" +
+          std::to_string(apollo->mpiRank) + "-" + name + ".yaml");
+    }
+  }
+}
+
 int
 Apollo::Region::getPolicyIndex(Apollo::RegionContext *context)
 {
+
+#ifdef PERF_CNTR_MODE
+    // If we're measuring perf cntrs, use the default policy
+    int choice = (this->shouldRunCounters) ? 0 : model->getIndex(context->features);
+#else
     int choice = model->getIndex( context->features );
+#endif
 
     if( Config::APOLLO_TRACE_POLICY ) {
         std::stringstream trace_out;
@@ -95,15 +200,14 @@ Apollo::Region::getPolicyIndex(Apollo::RegionContext *context)
     return choice;
 }
 
-Apollo::Region::Region(
+// initializaiton function used by overloaded region constructors
+void Apollo::Region::initRegion(
         const int num_features,
         const char  *regionName,
         int          numAvailablePolicies,
         Apollo::CallbackDataPool *callbackPool,
-        const std::string &modelYamlFile)
-    :
-        num_features(num_features), current_context(nullptr), idx(0), callback_pool(callbackPool)
-{
+        const std::string &modelYamlFile){
+
     apollo = Apollo::instance();
     if( Config::APOLLO_NUM_POLICIES ) {
         apollo->num_policies = Config::APOLLO_NUM_POLICIES;
@@ -146,8 +250,16 @@ Apollo::Region::Region(
                 // Load the same model for all regions.
                 model_file = Config::APOLLO_INIT_MODEL.substr(pos + 1);
             }
-            //std::cout << "Model Load " << model_file << std::endl;
-            model = ModelFactory::loadDecisionTree(apollo->num_policies, model_file);
+
+            if (fileExists(model_file))
+                //std::cout << "Model Load " << model_file << std::endl;
+                model = ModelFactory::loadDecisionTree(apollo->num_policies, model_file);
+            else {
+                // Fallback to default model.
+                std::cout << "WARNING: could not load file " << model_file
+                          << ", falling back to default Static, 0" << std::endl;
+                model = ModelFactory::createStatic(apollo->num_policies, 0);
+            }
         }
         else if ("Random" == model_str)
         {
@@ -158,6 +270,21 @@ Apollo::Region::Region(
         {
             model = ModelFactory::createRoundRobin(apollo->num_policies);
             //std::cout << "Model RoundRobin" << std::endl;
+        }
+#ifdef FULL_EXPLORE
+        else if ("FullExplore" == model_str)
+        {
+            model = ModelFactory::createFullExplore(apollo->num_policies);
+        }
+#endif
+        else if ("Optimal" == model_str) {
+           std::string file = "opt-" + std::string(name) + "-rank-" + std::to_string(apollo->mpiRank) + ".txt";
+           if (!fileExists(file)) {
+               std::cerr << "Optimal policy file " << file << " does not exist" << std::endl;
+               abort();
+           }
+
+           model = ModelFactory::createOptimal(file);
         }
         else
         {
@@ -195,16 +322,88 @@ Apollo::Region::Region(
             trace_file << " f" << i;
         trace_file << " policy xtime\n";
     }
+
+#ifdef PERF_CNTR_MODE
+    //std::string events[1] = {"PAPI_TOT_INS"};
+    //std::string events[1] = {"PAPI_DP_OPS"};
+    //std::vector<std::string> events = {"PAPI_DP_OPS", "PAPI_SP_OPS"};
+    //this->papiPerfCnt = new PapiCounters(1, events);
+#endif
+
     //std::cout << "Insert region " << name << " ptr " << this << std::endl;
     const auto ret = apollo->regions.insert( { name, this } );
 
     return;
+
 }
+
+Apollo::Region::Region(
+        const int num_features,
+        const char  *regionName,
+        int          numAvailablePolicies,
+        Apollo::CallbackDataPool *callbackPool,
+        const std::string &modelYamlFile)
+    :
+        num_features(num_features), 
+        current_context(nullptr), 
+        idx(0), callback_pool(callbackPool),
+        papiPerfCnt(nullptr),
+        shouldRunCounters(0)
+{
+    this->initRegion(num_features, regionName, numAvailablePolicies, callbackPool, modelYamlFile);
+}
+
+#ifdef PERF_CNTR_MODE
+Apollo::Region::Region(
+        const int num_features,
+        const char  *regionName,
+        int          numAvailablePolicies,
+        std::vector<std::string> papi_cntr_events,
+        int isMultiplexed,
+        Apollo::CallbackDataPool *callbackPool,
+        const std::string &modelYamlFile)
+    :
+        num_features(num_features), 
+        current_context(nullptr), 
+        idx(0), callback_pool(callbackPool),
+        shouldRunCounters(1)
+{
+    this->initRegion(num_features, regionName, numAvailablePolicies, callbackPool, modelYamlFile);
+    this->papiPerfCnt = new Apollo::PapiCounters(isMultiplexed, papi_cntr_events);
+}
+
+void Apollo::Region::apolloThreadBegin(){
+    if(this->papiPerfCnt && this->shouldRunCounters){
+        this->papiPerfCnt->startThread();
+    }
+}
+void Apollo::Region::apolloThreadEnd(){
+    if(this->papiPerfCnt && this->shouldRunCounters){
+        this->papiPerfCnt->stopThread();
+    }
+}
+
+// This will allow the user to query the constructed model
+int Apollo::Region::queryPolicyModel(std::vector<float> feats){
+    return this->model->getIndex(feats);
+}
+#else
+// If counters don't get enabled, just return immediately
+void Apollo::Region::apolloThreadBegin(){ return; }
+void Apollo::Region::apolloThreadEnd(){ return; }
+#endif
 
 Apollo::Region::~Region()
 {
+
+#ifdef PERF_CNTR_MODE
+    if(this->papiPerfCnt){
+        delete this->papiPerfCnt;
+    }
+#endif
+
     // Disable period based flushing.
-    Config::APOLLO_FLUSH_PERIOD = 0;
+    Config::APOLLO_GLOBAL_TRAIN_PERIOD = 0;
     while(pending_contexts.size() > 0)
        collectPendingContexts();
 
@@ -213,6 +412,7 @@ Apollo::Region::~Region()
 
     if( Config::APOLLO_TRACE_CSV )
         trace_file.close();
+
 
     return;
 }
@@ -224,9 +424,14 @@ Apollo::Region::begin()
     current_context = context;
     context->idx = this->idx;
     this->idx++;
-    context->exec_time_begin = std::chrono::steady_clock::now();
+
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    context->exec_time_begin = ts.tv_sec + ts.tv_nsec/1e9;
     context->isDoneCallback = nullptr;
     context->callback_arg = nullptr;
+
+
     return context;
 }
 
@@ -235,30 +440,129 @@ Apollo::Region::begin(std::vector<float> features)
 {
     Apollo::RegionContext *context = begin();
     context->features = features;
+
+#ifdef PERF_CNTR_MODE
+    //std::cout << "USING THREAD COUNT: " << omp_get_max_threads() << std::endl;
+
+    this->lastFeats = context->features;
+
+    // Check to see if we've already seen this feature set before
+    // If not, let's set the flag to run the counters 
+    // If so, we should just not run the counter code
+    // as we know the counter values already since they're policy-independent
+    if(this->papiPerfCnt){
+        this->shouldRunCounters = (this->feats_to_cntr_vals.find(context->features) == this->feats_to_cntr_vals.end());
+
+        // If we already have run the counters, then translate the passed-in
+        // feature vector so we can properly getPolicyIndex() if a tree has
+        // already been trained
+        if(!this->shouldRunCounters){
+            context->features = this->feats_to_cntr_vals[context->features];
+            this->lastFeats = context->features;
+        }
+    }
+#endif
+
     return context;
 }
 
 void
 Apollo::Region::collectContext(Apollo::RegionContext *context, double metric)
 {
+#ifdef PERF_CNTR_MODE
+  // If the performance counters were setup
+  if(this->papiPerfCnt){
+
+    // The counters were run, this was the first time we saw this user-supplied
+    // feature vector. Thus, we should save it to the feature-counter mapping
+    // along with not adding the measure to the region measures due to the
+    // slight execution time overhead PAPI adds. 
+    if(this->shouldRunCounters){
+
+        // Check whether or not the counters were actually called!
+        // If they were not actually called, this region doesn't have
+        // start/stopApolloThread calls, so let's drop the papiPerfCnt
+        // object. Otherwise, continue as normal with adding the counters.
+        if(this->papiPerfCnt->all_cntr_values.size() == 0){
+            //delete this->papiPerfCnt;
+            //this->papiPerfCnt = nullptr;
+            //goto skipCounterAdding;
+        }
+
+        // First calculate the sum of each counter
+        // These summary statistics are calculated across threads, so we
+        // always have the same feature dimensions irregardless of thread count
+        std::vector<float> vals = this->papiPerfCnt->getSummaryStats();
+
+        // Clear the PapiCounters counter values
+        this->papiPerfCnt->clearAllCntrValues();
+
+        // Map the user-provided features to the counter values
+        this->feats_to_cntr_vals[context->features] = vals;
+
+        // Add the new features to the feature list
+        //for(int i = 0; i < vals.size(); ++i){
+            //context->features.push_back(vals[i]);
+        //}
+
+        // Store these features for use after Region->end() call finishes
+        // and the context gets deleted (so we lose our context->features vector)
+        this->lastFeats = context->features;
+
+        // We're gonna change this later, just want something working for now
+        goto dontAddMeasure;
+    }
+
+    // This case happens if we already got counter values for the 
+    // user-provided features (and we've run this feature config once before) 
+    else{
+        // Get the counter values for this feature set
+        //std::vector<float> vals = this->feats_to_cntr_vals[context->features];
+
+        // Set our features to the counter values
+        //context->features = vals;
+
+        // Store these features for use after Region->end() call finishes
+        // and the context gets deleted (so we lose our context->features vector)
+        //this->lastFeats = context->features;
+
+        // continue on to add the measure
+    }
+  }
+
+skipCounterAdding:
+        // Store these features for use after Region->end() call finishes
+        // and the context gets deleted (so we lose our context->features vector)
+        this->lastFeats = context->features;
+#endif
+
+// Hack around the goto statement, wrap this in it's own scope
+// Of course this is messy, but we will clean up later. Just want
+// to get something working for now. 
+{
   // std::cout << "COLLECT CONTEXT " << context->idx << " REGION " << name \
             << " metric " << metric << std::endl;
-  auto iter = measures.find({context->features, context->policy});
-  if (iter == measures.end()) {
-    iter = measures
+
+    // Check if we already have seen this feature+policy combination.
+    // If we have, add to the total_time for its measure, otherwise
+    // create a new measurement for it.
+    auto iter = measures.find({context->features, context->policy});
+    if (iter == measures.end()) {
+      iter = measures
                .insert(std::make_pair(
                    std::make_pair(context->features, context->policy),
                    std::move(
                        std::make_unique<Apollo::Region::Measure>(1, metric))))
                .first;
-    } else {
+    } 
+    else {
         iter->second->exec_count++;
         iter->second->time_total += metric;
     }
 
     if( Config::APOLLO_TRACE_CSV ) {
         trace_file << apollo->mpiRank << " ";
-        trace_file << Config::APOLLO_INIT_MODEL << " ";
+        trace_file << model->name << " ";
         trace_file << this->name << " ";
         trace_file << context->idx << " ";
         for(auto &f : context->features)
@@ -266,14 +570,24 @@ Apollo::Region::collectContext(Apollo::RegionContext *context, double metric)
         trace_file << context->policy << " ";
         trace_file << metric << "\n";
     }
+}
 
+    // Try only counting a region execution as having been a measurement
     apollo->region_executions++;
 
-    if( Config::APOLLO_FLUSH_PERIOD && ( apollo->region_executions%Config::APOLLO_FLUSH_PERIOD ) == 0 ) {
+#ifdef PERF_CNTR_MODE
+dontAddMeasure:
+#endif
+
+    if( Config::APOLLO_GLOBAL_TRAIN_PERIOD && ( apollo->region_executions%Config::APOLLO_GLOBAL_TRAIN_PERIOD) == 0 ) {
         //std::cout << "FLUSH PERIOD! region_executions " << apollo->region_executions<< std::endl; //ggout
         apollo->flushAllRegionMeasurements(apollo->region_executions);
     }
+    else if( Config::APOLLO_PER_REGION_TRAIN_PERIOD && (idx%Config::APOLLO_PER_REGION_TRAIN_PERIOD) == 0 ) {
+        train(idx);
+    }
 
+    // delete the RegionContext struct
     delete context;
     current_context = nullptr;
 }
@@ -298,10 +612,10 @@ void Apollo::Region::collectPendingContexts() {
       if (returnsMetric)
         collectContext(context, metric);
       else {
-        context->exec_time_end = std::chrono::steady_clock::now();
-        double duration = std::chrono::duration<double>(
-                              context->exec_time_end - context->exec_time_begin)
-                              .count();
+        struct timespec ts;
+        clock_gettime(CLOCK_MONOTONIC, &ts);
+        context->exec_time_end = ts.tv_sec + ts.tv_nsec/1e9;
+        double duration = context->exec_time_end - context->exec_time_begin;
         collectContext(context, duration);
       }
       return true;
@@ -321,10 +635,10 @@ Apollo::Region::end(Apollo::RegionContext *context)
     if(context->isDoneCallback)
         pending_contexts.push_back(context);
     else {
-      context->exec_time_end = std::chrono::steady_clock::now();
-      double duration = std::chrono::duration<double>(context->exec_time_end -
-                                                      context->exec_time_begin)
-                            .count();
+      struct timespec ts;
+      clock_gettime(CLOCK_MONOTONIC, &ts);
+      context->exec_time_end = ts.tv_sec + ts.tv_nsec/1e9;
+      double duration = context->exec_time_end - context->exec_time_begin;
       collectContext(context, duration);
     }
 
@@ -350,6 +664,7 @@ Apollo::Region::end(double metric)
 void
 Apollo::Region::end(void)
 {
+
     end(current_context);
 }
 
@@ -377,7 +692,7 @@ Apollo::Region::reduceBestPolicies(int step)
         if( Config::APOLLO_TRACE_MEASURES ) {
             trace_out << "features: [ ";
             for(auto &f : feature_vector ) { \
-                trace_out << (int)f << ", ";
+                trace_out << (float)f << ", ";
             }
             trace_out << " ]: "
                 << "policy: " << policy_index
@@ -393,6 +708,8 @@ Apollo::Region::reduceBestPolicies(int step)
         }
         else {
             // Key exists
+            // If the execution time of this feature+policy is faster than the best,
+            // then replace the best policy.
             if(  best_policies[ feature_vector ].second > time_avg ) {
                 best_policies[ feature_vector ] = { policy_index, time_avg };
             }
@@ -405,7 +722,7 @@ Apollo::Region::reduceBestPolicies(int step)
         for( auto &b : best_policies ) {
             trace_out << "features: [ ";
             for(auto &f : b.first )
-                trace_out << (int)f << ", ";
+                trace_out << (float) f << ", ";
             trace_out << "]: P:"
                 << b.second.first << " T: " << b.second.second << std::endl;
         }
@@ -424,6 +741,8 @@ void
 Apollo::Region::setFeature(Apollo::RegionContext *context, float value)
 {
     context->features.push_back(value);
+
+
     return;
 }
 
