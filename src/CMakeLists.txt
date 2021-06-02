@@ -72,7 +72,7 @@ if(ENABLE_PERF_CNTRS)
     # Supply the PAPI library path
     if(PAPI_DIR)
         message(STATUS "LINKING PAPI!")
-        target_link_libraries(apollo PUBLIC libpapi.so)
+        target_link_libraries(apollo PUBLIC ${PAPI_DIR}/lib/libpapi.so)
     endif()
 endif()
 

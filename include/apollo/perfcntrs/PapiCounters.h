@@ -9,7 +9,7 @@
 #include <mutex>
 #include <vector>
 #include <map>
-#include <papi.h>
+#include "papi.h"
 #include "apollo/perfcntrs/PerfCounter.h"
 #include "util/spinlock.h"
 
