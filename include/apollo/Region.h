@@ -16,7 +16,7 @@
 #include <mpi.h>
 #endif //ENABLE_MPI
 
-#ifdef PERF_CNTRS_MODE
+#ifdef PERF_CNTR_MODE
 #include "apollo/perfcntrs/PapiCounters.h"
 #endif
 
@@ -84,8 +84,8 @@ class Apollo::Region {
         void collectPendingContexts();
         void collectContext(Apollo::RegionContext *, double);
 
-#ifdef PERF_CNTRS_MODE
-        PapiCounters papiCount;
+#ifdef PERF_CNTR_MODE
+        PapiCounters* papiCount;
 #endif
 
 }; // end: Apollo::Region
