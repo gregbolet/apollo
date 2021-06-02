@@ -16,6 +16,10 @@
 #include <mpi.h>
 #endif //ENABLE_MPI
 
+#ifdef PERF_CNTRS_MODE
+#include "apollo/perfcntrs/PapiCounters.h"
+#endif
+
 class Apollo::Region {
     public:
         Region(
@@ -79,6 +83,11 @@ class Apollo::Region {
         std::vector<Apollo::RegionContext *> pending_contexts;
         void collectPendingContexts();
         void collectContext(Apollo::RegionContext *, double);
+
+#ifdef PERF_CNTRS_MODE
+        PapiCounters papiCount;
+#endif
+
 }; // end: Apollo::Region
 
 struct Apollo::RegionContext
