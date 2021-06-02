@@ -2,7 +2,6 @@
 #ifndef APOLLO_PAPI_CNTRS_H
 #define APOLLO_PAPI_CNTRS_H
 
-#include "papi.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string>
@@ -10,6 +9,7 @@
 #include <mutex>
 #include <vector>
 #include <map>
+#include <papi.h>
 #include "apollo/perfcntrs/PerfCounter.h"
 #include "util/spinlock.h"
 
@@ -22,8 +22,8 @@ class PapiCounters : public PerfCounter{
         PapiCounters(int isMultiplexed, int numEvents, std::string* eventNames);
         ~PapiCounters();
 
-        void startThread();
-        void stopThread();        
+        void startThread() override;
+        void stopThread() override;        
         
     private:
         int isMultiplexed;

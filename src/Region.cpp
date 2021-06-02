@@ -227,6 +227,12 @@ Apollo::Region::begin()
     context->exec_time_begin = std::chrono::steady_clock::now();
     context->isDoneCallback = nullptr;
     context->callback_arg = nullptr;
+
+#ifdef PERF_CNTR_MODE
+    std::string events[3] = {"PAPI_L1_TCM", "PAPI_L2_TCM", "PAPI_L3_TCM"};
+    this->papiPerfCnt = new PapiCounters(0, 3, events);
+#endif
+
     return context;
 }
 
@@ -351,6 +357,10 @@ void
 Apollo::Region::end(void)
 {
     end(current_context);
+
+#ifdef PERF_CNTR_MODE
+    delete this->papiPerfCnt;
+#endif
 }
 
 int

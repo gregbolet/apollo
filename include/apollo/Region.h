@@ -85,7 +85,7 @@ class Apollo::Region {
         void collectContext(Apollo::RegionContext *, double);
 
 #ifdef PERF_CNTR_MODE
-        PapiCounters* papiCount;
+        PapiCounters* papiPerfCnt;
 #endif
 
 }; // end: Apollo::Region

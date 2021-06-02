@@ -17,7 +17,7 @@ PapiCounters::PapiCounters(int isMultiplexed,
 	// Check correct versioning
 	retval = PAPI_library_init( PAPI_VER_CURRENT );
 	if ( retval != PAPI_VER_CURRENT ) {
-		fprintf(stderr, "PAPI_library_init error: code [%d]\n", retval );
+		fprintf(stderr, "PAPI_library_init error: code [%d] and version number [%d]\n", retval, PAPI_VER_CURRENT );
 	}
 
     if(isMultiplexed){

@@ -176,6 +176,16 @@ endif()
 
 if(ENABLE_PERF_CNTRS)
     add_definitions(-DPERF_CNTR_MODE)
+
+    #find_package(PAPI REQUIRED)
+
+    # Supply the PAPI library path
+    if(PAPI_DIR)
+        message(STATUS "Given PAPI_DIR!")
+        include_directories(${PAPI_DIR}/include ${PAPI_DIR}/lib)
+
+        add_library(papi SHARED IMPORTED)
+    endif()
 endif()
 
 find_package(OpenCV REQUIRED)

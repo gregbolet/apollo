@@ -45,6 +45,7 @@ set(APOLLO_HEADERS
     ../include/apollo/PolicyModel.h
     ../include/apollo/TimingModel.h
     ../include/apollo/ModelFactory.h
+    ../include/apollo/perfcntrs/PerfCounter.h
     )
 
 set(APOLLO_SOURCES
@@ -65,6 +66,14 @@ add_library(apollo SHARED ${APOLLO_SOURCES})
 
 if (ENABLE_MPI)
     target_link_libraries(apollo PUBLIC MPI::MPI_CXX)
+endif()
+
+if(ENABLE_PERF_CNTRS)
+    # Supply the PAPI library path
+    if(PAPI_DIR)
+        message(STATUS "LINKING PAPI!")
+        target_link_libraries(apollo PUBLIC libpapi.so)
+    endif()
 endif()
 
 target_link_libraries(apollo PRIVATE dl ${OpenCV_LIBS})
