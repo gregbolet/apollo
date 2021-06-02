@@ -69,6 +69,8 @@ PapiCounters::~PapiCounters(){
     // Destroy the events_to_track
     free(this->events_to_track);
 
+    printf("Finished freeing events to track!\n");
+
     // Free the counter arrays
     for(std::vector<long long*>::iterator i = std::begin(this->all_cntr_values);
         i != std::end(this->all_cntr_values); ++i){

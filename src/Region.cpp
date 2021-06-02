@@ -236,6 +236,15 @@ Apollo::Region::begin()
     return context;
 }
 
+#ifdef PERF_CNTR_MODE
+void Apollo::Region::apolloThreadBegin(){
+    this->papiPerfCnt->startThread();
+}
+void Apollo::Region::apolloThreadEnd(){
+    this->papiPerfCnt->stopThread();
+}
+#endif
+
 Apollo::RegionContext *
 Apollo::Region::begin(std::vector<float> features)
 {

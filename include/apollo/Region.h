@@ -72,6 +72,12 @@ class Apollo::Region {
         std::unique_ptr<TimingModel> time_model;
         std::unique_ptr<PolicyModel> model;
 
+#ifdef PERF_CNTR_MODE
+        void apolloThreadBegin();
+        void apolloThreadEnd();
+#endif
+
+
     private:
         //
         Apollo        *apollo;

@@ -45,7 +45,6 @@ set(APOLLO_HEADERS
     ../include/apollo/PolicyModel.h
     ../include/apollo/TimingModel.h
     ../include/apollo/ModelFactory.h
-    ../include/apollo/perfcntrs/PerfCounter.h
     )
 
 set(APOLLO_SOURCES
@@ -59,8 +58,15 @@ set(APOLLO_SOURCES
     models/RoundRobin.cpp
     models/DecisionTree.cpp
     models/RegressionTree.cpp
-    perfcntrs/PapiCounters.cpp
     )
+
+if (ENABLE_PERF_CNTRS)
+    list(APPEND APOLLO_SOURCES
+        perfcntrs/PapiCounters.cpp)
+
+    list(APPEND APOLLO_HEADERS 
+        ../include/apollo/perfcntrs/PerfCounter.h)
+endif()
 
 add_library(apollo SHARED ${APOLLO_SOURCES})
 
