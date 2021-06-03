@@ -73,12 +73,18 @@ class Apollo::Region {
         std::unique_ptr<PolicyModel> model;
 
 #ifdef PERF_CNTR_MODE
-        void apolloThreadBegin();
-        void apolloThreadEnd();
+        //void apolloThreadBegin();
+        //void apolloThreadEnd();
 #endif
 
 
     private:
+
+#ifdef PERF_CNTR_MODE
+        //PapiCounters* papiPerfCnt;
+        //int * mytestInt;
+        //int myInt;
+#endif
         //
         Apollo        *apollo;
         // DEPRECATED wil be removed
@@ -90,9 +96,6 @@ class Apollo::Region {
         void collectPendingContexts();
         void collectContext(Apollo::RegionContext *, double);
 
-#ifdef PERF_CNTR_MODE
-        PapiCounters* papiPerfCnt;
-#endif
 
 }; // end: Apollo::Region
 

@@ -1,11 +1,18 @@
 
 #include "apollo/perfcntrs/PapiCounters.h"
 
+PapiCounters::PapiCounters(){
+	return;
+}
+PapiCounters::~PapiCounters(){
+	return;
+}
 
+/*
 // Initialize PAPI and keep the perfcntr names we want to track
 PapiCounters::PapiCounters(int isMultiplexed, 
-                                int numEvents, 
-                                std::string* eventNames)
+                           int numEvents, 
+                           std::string* eventNames)
       :isMultiplexed(isMultiplexed), 
        numEvents(numEvents),
        event_names_to_track(eventNames){
@@ -21,7 +28,7 @@ PapiCounters::PapiCounters(int isMultiplexed,
 	}
 
     if(isMultiplexed){
-	    // Initialize the multiplexing
+
 	    retval = PAPI_multiplex_init();
 	    if ( retval == PAPI_ENOSUPP) {
 	        fprintf(stderr, "Multiplexing not supported!\n");
@@ -62,7 +69,9 @@ PapiCounters::PapiCounters(int isMultiplexed,
 
     return;
 }
+*/
 
+/*
 // Nothing to free... yet
 PapiCounters::~PapiCounters(){
 
@@ -77,9 +86,13 @@ PapiCounters::~PapiCounters(){
             free(*i);
     }
 
+	PAPI_shutdown();
+
     return;
 }
+*/
 
+/*
 void PapiCounters::startThread(){
 
     // Keep track of the eventset identifier for this thread
@@ -91,20 +104,20 @@ void PapiCounters::startThread(){
 		fprintf(stderr, "PAPI thread registration error!\n");
 	}
 
-	/* Create the Event Set for this thread */
+	// Create the Event Set for this thread
 	if (PAPI_create_eventset(&EventSet) != PAPI_OK){
 		fprintf(stderr, "PAPI eventset creation error!\n");
 	}
 
-	/* In Component PAPI, EventSets must be assigned a component index
-	   before you can fiddle with their internals. 0 is always the cpu component */
+	// In Component PAPI, EventSets must be assigned a component index
+	// before you can fiddle with their internals. 0 is always the cpu component
 	retval = PAPI_assign_eventset_component( EventSet, 0 );
 	if ( retval != PAPI_OK ) {
 		fprintf(stderr, "PAPI assign eventset component error!\n");
 	}
 
     if(this->isMultiplexed){
-	    /* Convert our EventSet to a multiplexed EventSet*/
+	    // Convert our EventSet to a multiplexed EventSet
 	    if ( ( retval = PAPI_set_multiplex( EventSet ) ) != PAPI_OK ) {
 		    if ( retval == PAPI_ENOSUPP) {
 			    fprintf(stderr, "PAPI Multiplexing not supported!\n");
@@ -138,7 +151,7 @@ void PapiCounters::startThread(){
 		fprintf(stderr, "Could NOT reset eventset!\n");
 	}
 
-	/* Start counting events in the Event Set */
+	// Start counting events in the Event Set
 	if (PAPI_start(EventSet) != PAPI_OK){
 		fprintf(stderr, "Could NOT start eventset counting!\n");
 	}
@@ -151,7 +164,7 @@ void PapiCounters::stopThread(){
     long long* cntr_vals = this->thread_id_to_cntr_ptr[threadId];
     int retval;
 
-	/* stop counting events in the Event Set */
+	// stop counting events in the Event Set
 	// Store the resulting values into our counter values array
 	if ( ( retval = PAPI_stop( EventSet, cntr_vals ) ) != PAPI_OK){
 		fprintf(stderr, "Could NOT stop eventset counting!\n");
@@ -172,3 +185,5 @@ void PapiCounters::stopThread(){
 		fprintf(stderr, "PAPI could not unregister thread!\n");
 	}
 }
+
+*/

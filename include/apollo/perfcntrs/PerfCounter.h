@@ -8,11 +8,11 @@
 class PerfCounter{
 
     public:
-        //PerfCounter();
-        //~PerfCounter();
+        PerfCounter() {};
+        ~PerfCounter() {};
 
-        virtual void startThread() {};
-        virtual void stopThread() {};        
+        //virtual void startThread() {};
+        //virtual void stopThread() {};        
         //virtual void query();
 
 };

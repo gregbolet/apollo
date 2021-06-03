@@ -104,6 +104,8 @@ Apollo::Region::Region(
     :
         num_features(num_features), current_context(nullptr), idx(0), callback_pool(callbackPool)
 {
+
+
     apollo = Apollo::instance();
     if( Config::APOLLO_NUM_POLICIES ) {
         apollo->num_policies = Config::APOLLO_NUM_POLICIES;
@@ -195,6 +197,13 @@ Apollo::Region::Region(
             trace_file << " f" << i;
         trace_file << " policy xtime\n";
     }
+
+#ifdef PERF_CNTR_MODE
+    //std::string events[3] = {"PAPI_L1_TCM", "PAPI_L2_TCM", "PAPI_L3_TCM"};
+    //this->papiPerfCnt = new PapiCounters(0, 3, events);
+    //this->papiPerfCnt = new PapiCounters();
+#endif
+
     //std::cout << "Insert region " << name << " ptr " << this << std::endl;
     const auto ret = apollo->regions.insert( { name, this } );
 
@@ -203,6 +212,13 @@ Apollo::Region::Region(
 
 Apollo::Region::~Region()
 {
+
+#ifdef PERF_CNTR_MODE
+    //delete this->papiPerfCnt;
+    //this->papiPerfCnt = nullptr;
+    //printf("\tDeleted papiPerfCnt object!\n");
+#endif
+
     // Disable period based flushing.
     Config::APOLLO_FLUSH_PERIOD = 0;
     while(pending_contexts.size() > 0)
@@ -213,6 +229,7 @@ Apollo::Region::~Region()
 
     if( Config::APOLLO_TRACE_CSV )
         trace_file.close();
+
 
     return;
 }
@@ -228,21 +245,17 @@ Apollo::Region::begin()
     context->isDoneCallback = nullptr;
     context->callback_arg = nullptr;
 
-#ifdef PERF_CNTR_MODE
-    std::string events[3] = {"PAPI_L1_TCM", "PAPI_L2_TCM", "PAPI_L3_TCM"};
-    this->papiPerfCnt = new PapiCounters(0, 3, events);
-#endif
 
     return context;
 }
 
 #ifdef PERF_CNTR_MODE
-void Apollo::Region::apolloThreadBegin(){
-    this->papiPerfCnt->startThread();
-}
-void Apollo::Region::apolloThreadEnd(){
-    this->papiPerfCnt->stopThread();
-}
+//void Apollo::Region::apolloThreadBegin(){
+    //this->papiPerfCnt->startThread();
+//}
+//void Apollo::Region::apolloThreadEnd(){
+    //this->papiPerfCnt->stopThread();
+//}
 #endif
 
 Apollo::RegionContext *
@@ -365,11 +378,8 @@ Apollo::Region::end(double metric)
 void
 Apollo::Region::end(void)
 {
-    end(current_context);
 
-#ifdef PERF_CNTR_MODE
-    delete this->papiPerfCnt;
-#endif
+    end(current_context);
 }
 
 int
