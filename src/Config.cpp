@@ -25,3 +25,14 @@ int Config::APOLLO_PER_REGION_TRAIN_PERIOD;
 int Config::APOLLO_TRACE_CSV;
 std::string Config::APOLLO_POLICY_MODEL;
 std::string Config::APOLLO_TRACE_CSV_FOLDER_SUFFIX;
+
+// Added to control decision tree depth
+int Config::APOLLO_DTREE_DEPTH;
+std::string Config::APOLLO_SINGLE_MODEL_TO_LOAD;
+
+#ifdef PERF_CNTR_MODE
+    int Config::APOLLO_ENABLE_PERF_CNTRS;
+    int Config::APOLLO_PERF_CNTRS_MLTPX;
+    
+    std::vector<std::string> Config::APOLLO_PERF_CNTRS;
+#endif

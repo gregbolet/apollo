@@ -108,6 +108,21 @@ Apollo::getCallpathOffset(int walk_distance)
   return region_id;
 }
 
+#ifdef PERF_CNTR_MODE
+    std::vector<std::string> getCountersFromString(std::string envVarInput){
+        std::vector<std::string> cntrList;
+        std::stringstream s_stream(envVarInput);
+
+        while(s_stream.good()){
+            std::string substr;
+            getline(s_stream, substr, ','); //get first string delimited by comma
+            cntrList.push_back(substr);
+        }
+
+        return cntrList;
+    }
+#endif
+
 Apollo::Apollo()
 {
     region_executions = 0;
@@ -131,6 +146,19 @@ Apollo::Apollo()
     Config::APOLLO_RETRAIN_REGION_THRESHOLD = std::stof( apolloUtils::safeGetEnv( "APOLLO_RETRAIN_REGION_THRESHOLD", "0.5" ) );
     Config::APOLLO_TRACE_CSV = std::stoi( apolloUtils::safeGetEnv( "APOLLO_TRACE_CSV", "0" ) );
     Config::APOLLO_TRACE_CSV_FOLDER_SUFFIX = apolloUtils::safeGetEnv( "APOLLO_TRACE_CSV_FOLDER_SUFFIX", "" );
+
+#ifdef PERF_CNTR_MODE
+    Config::APOLLO_ENABLE_PERF_CNTRS = std::stoi( apolloUtils::safeGetEnv( "APOLLO_ENABLE_PERF_CNTRS", "0" ) );
+    Config::APOLLO_PERF_CNTRS_MLTPX = std::stoi( apolloUtils::safeGetEnv( "APOLLO_PERF_CNTRS_MLTPX", "1" ) );
+
+    std::string PERF_CNTRS = apolloUtils::safeGetEnv( "APOLLO_PERF_CNTRS", "PAPI_DP_OPS,PAPI_SP_OPS" );
+    Config::APOLLO_PERF_CNTRS = getCountersFromString(PERF_CNTRS);
+
+    //std::cout << "Counters Used: " << std::endl;
+    //for(const auto& value: Config::APOLLO_PERF_CNTRS) {
+        //std::cout << "(" << value << ")" << std::endl;
+    //}
+#endif
 
     if (Config::APOLLO_COLLECTIVE_TRAINING) {
 #ifndef ENABLE_MPI
@@ -427,7 +455,7 @@ Apollo::train(int step) {
 }
 
 extern "C" {
- void *__apollo_region_create(int num_features, char *id, int num_policies) {
+ void *__apollo_region_create(int num_features, char *id, int num_policies) noexcept{
      static Apollo *apollo = Apollo::instance();
      //std::string callpathOffset = apollo->getCallpathOffset(3);
      std::cout << "CREATE region " << id << " num_features " << num_features
@@ -435,24 +463,38 @@ extern "C" {
      return new Apollo::Region(num_features, id, num_policies);
  }
 
- void __apollo_region_begin(Apollo::Region *r) {
+ void __apollo_region_begin(Apollo::Region *r) noexcept{
      //std::cout << "BEGIN region " << r->name << std::endl;
      r->begin();
  }
 
- void __apollo_region_end(Apollo::Region *r) {
+ void __apollo_region_end(Apollo::Region *r) noexcept{
      //std::cout << "END region " << r->name << std::endl;
      r->end();
  }
 
- void __apollo_region_set_feature(Apollo::Region *r, float feature) {
+ void __apollo_region_set_feature(Apollo::Region *r, float feature) noexcept{
      //std::cout << "SET FEATURE " << feature << " region " << r->name << std::endl;
      r->setFeature(feature);
  }
 
- int __apollo_region_get_policy(Apollo::Region *r) {
+ int __apollo_region_get_policy(Apollo::Region *r) noexcept{
      int policy = r->getPolicyIndex();
      //std::cout << "GET POLICY " << policy << " region " << r->name << std::endl;
      return policy;
  }
+
+#ifdef PERF_CNTR_MODE
+ void __apollo_region_thread_begin(Apollo::Region *r) noexcept{
+     //std::cout << "Starting Apollo Thread!" << std::endl;
+     r->apolloThreadBegin();
+     //std::cout << "Started Apollo Thread!" << std::endl;
+ }
+
+ void __apollo_region_thread_end(Apollo::Region *r) noexcept{
+     //std::cout << "Stoping Apollo Thread!" << std::endl;
+     r->apolloThreadEnd();
+     //std::cout << "Stopped Apollo Thread!" << std::endl;
+ }
+#endif
 }

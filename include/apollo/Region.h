@@ -22,6 +22,8 @@
 #include <mpi.h>
 #endif  // ENABLE_MPI
 
+#include "apollo/perfcntrs/PapiCounters.h"
+
 class Apollo::Region
 {
 public:
@@ -52,6 +54,7 @@ public:
   int num_features;
   int num_policies;
 
+
   // Stores raw measurements as <features, policy, metric>
   std::vector<std::tuple<std::vector<float>, int, double>> measures;
 
@@ -65,6 +68,20 @@ public:
   // Model information, name and params.
   std::string model_name;
   std::unordered_map<std::string, std::string> model_params;
+  
+  // PAPI_PERF_CNTRS begin
+  void apolloThreadBegin();
+  void apolloThreadEnd();
+  struct VectorHasher {
+    int operator()(const std::vector<float> &V) const
+    {
+      static std::hash<float> hasher;
+      return hasher(V[0]);
+    }
+  };
+  std::map<std::vector<float>, std::vector<float>> feats_to_cntr_vals;
+  int shouldRunCounters;
+  // PAPI_PERF_CNTRS end
 
 private:
   //
@@ -74,6 +91,7 @@ private:
   //
   std::ofstream trace_file;
 
+  Apollo::PapiCounters *papiPerfCnt;
   std::vector<Apollo::RegionContext *> pending_contexts;
   void collectContext(Apollo::RegionContext *, double);
 };  // end: Apollo::Region

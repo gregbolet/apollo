@@ -138,7 +138,12 @@ void Apollo::Region::train(int step)
 
 int Apollo::Region::getPolicyIndex(Apollo::RegionContext *context)
 {
-  int choice = model->getIndex(context->features);
+#ifdef PERF_CNTR_MODE
+    // If we're measuring perf cntrs, use the default policy
+    int choice = (this->shouldRunCounters) ? 0 : model->getIndex(context->features);
+#else
+    int choice = model->getIndex( context->features );
+#endif
 
   if (Config::APOLLO_TRACE_POLICY) {
     std::stringstream trace_out;
@@ -238,16 +243,47 @@ Apollo::Region::Region(const int num_features,
       current_context(nullptr),
       idx(0)
 {
+#ifdef PERF_CNTR_MODE
+    if(Config::APOLLO_ENABLE_PERF_CNTRS){
+        //this->num_features = (int) Config::APOLLO_PERF_CNTRS.size();
+        //this->shouldRunCounters = 1;
+        this->papiPerfCnt = new Apollo::PapiCounters(Config::APOLLO_PERF_CNTRS_MLTPX, Config::APOLLO_PERF_CNTRS);
+    }
+    else{
+        this->shouldRunCounters = 0;
+        this->papiPerfCnt = nullptr;
+    }
+#else
+    this->shouldRunCounters = 0;
+    this->papiPerfCnt = nullptr;
+#endif 
+
   apollo = Apollo::instance();
 
   strncpy(name, regionName, sizeof(name) - 1);
   name[sizeof(name) - 1] = '\0';
 
   parsePolicyModel(Config::APOLLO_POLICY_MODEL);
+
+#ifdef PERF_CNTR_MODE
+    if(Config::APOLLO_ENABLE_PERF_CNTRS){
+  model = ModelFactory::createPolicyModel(model_name,
+                                          this->papiPerfCnt->numEvents,
+                                          num_policies,
+                                          model_params);
+    }
+    else{
   model = ModelFactory::createPolicyModel(model_name,
                                           num_features,
                                           num_policies,
                                           model_params);
+    }
+#else
+  model = ModelFactory::createPolicyModel(model_name,
+                                          num_features,
+                                          num_policies,
+                                          model_params);
+#endif
 
   if (!modelYamlFile.empty()) model->load(modelYamlFile);
 
@@ -307,18 +343,55 @@ Apollo::Region::Region(const int num_features,
     // Write header.
     trace_file << "rankid training region idx";
     // trace_file << "features";
-    for (int i = 0; i < num_features; i++)
-      trace_file << " f" << i;
-    trace_file << " policy xtime\n";
+
+#ifdef PERF_CNTR_MODE
+    if(Config::APOLLO_ENABLE_PERF_CNTRS){
+      for (int i = 0; i < papiPerfCnt->numEvents; i++)
+         trace_file << " f" << i;
+    }
+    else{
+      for (int i = 0; i < num_features; i++)
+         trace_file << " f" << i;
+
+    }
   }
+#else
+      for (int i = 0; i < num_features; i++)
+         trace_file << " f" << i;
+#endif
+
+  trace_file << " policy xtime\n";
   // std::cout << "Insert region " << name << " ptr " << this << std::endl;
   const auto ret = apollo->regions.insert({name, this});
 
   return;
 }
 
+#ifdef PERF_CNTR_MODE
+void Apollo::Region::apolloThreadBegin(){
+    if(this->papiPerfCnt && this->shouldRunCounters){
+        this->papiPerfCnt->startThread();
+    }
+}
+void Apollo::Region::apolloThreadEnd(){
+    if(this->papiPerfCnt && this->shouldRunCounters){
+        this->papiPerfCnt->stopThread();
+    }
+}
+#else
+// If counters don't get enabled, just return immediately
+void Apollo::Region::apolloThreadBegin(){ return; }
+void Apollo::Region::apolloThreadEnd(){ return; }
+#endif
+
 Apollo::Region::~Region()
 {
+#ifdef PERF_CNTR_MODE
+    if(this->papiPerfCnt){
+        delete this->papiPerfCnt;
+    }
+#endif
+
   // Disable period based flushing.
   Config::APOLLO_GLOBAL_TRAIN_PERIOD = 0;
   while (pending_contexts.size() > 0)
@@ -344,14 +417,80 @@ Apollo::RegionContext *Apollo::Region::begin()
 
 Apollo::RegionContext *Apollo::Region::begin(std::vector<float> features)
 {
-  Apollo::RegionContext *context = begin();
-  context->features = features;
-  return context;
+#ifdef PERF_CNTR_MODE
+    //std::cout << "USING THREAD COUNT: " << omp_get_max_threads() << std::endl;
+
+    //this->lastFeats = context->features;
+
+    // Check to see if we've already seen this feature set before
+    // If not, let's set the flag to run the counters 
+    // If so, we should just not run the counter code
+    // as we know the counter values already since they're policy-independent
+    if(this->papiPerfCnt){
+        this->shouldRunCounters = (this->feats_to_cntr_vals.find(features) == this->feats_to_cntr_vals.end());
+        //this->shouldRunCounters = !(this->feats_to_cntr_vals.contains(context->features));
+
+        // If we already have run the counters, then translate the passed-in
+        // feature vector so we can properly getPolicyIndex() if a tree has
+        // already been trained
+        if(!this->shouldRunCounters){
+            features = this->feats_to_cntr_vals[features];
+            //this->lastFeats = context->features;
+        }
+    }
+#endif
+
+    Apollo::RegionContext *context = begin();
+    context->features = features;
+
+    return context;
 }
 
 void Apollo::Region::collectContext(Apollo::RegionContext *context,
                                     double metric)
 {
+#ifdef PERF_CNTR_MODE
+  // If the performance counters were setup
+  if(this->papiPerfCnt){
+
+    // The counters were run, this was the first time we saw this user-supplied
+    // feature vector. Thus, we should save it to the feature-counter mapping
+    // along with not adding the measure to the region measures due to the
+    // slight execution time overhead PAPI adds. 
+    if(this->shouldRunCounters){
+
+        // First calculate the sum of each counter
+        // These summary statistics are calculated across threads, so we
+        // always have the same feature dimensions irregardless of thread count
+        std::vector<float> vals = this->papiPerfCnt->getSummaryStats();
+
+        // Clear the PapiCounters counter values
+        this->papiPerfCnt->clearAllCntrValues();
+
+        // Map the user-provided features to the counter values
+        this->feats_to_cntr_vals[context->features] = vals;
+
+        // Store these features for use after Region->end() call finishes
+        // and the context gets deleted (so we lose our context->features vector)
+        //this->lastFeats = context->features;
+
+    }
+    else{
+      measures.push_back(
+          std::make_tuple(context->features, context->policy, metric));
+
+      if (Config::APOLLO_TRACE_CSV) {
+        trace_file << apollo->mpiRank << " ";
+        trace_file << model->name << " ";
+        trace_file << this->name << " ";
+        trace_file << context->idx << " ";
+        for (auto &f : context->features)
+          trace_file << f << " ";
+        trace_file << context->policy << " ";
+        trace_file << metric << "\n";
+      }
+    }
+#else
   measures.push_back(
       std::make_tuple(context->features, context->policy, metric));
 
@@ -365,6 +504,7 @@ void Apollo::Region::collectContext(Apollo::RegionContext *context,
     trace_file << context->policy << " ";
     trace_file << metric << "\n";
   }
+#endif
 
   apollo->region_executions++;
 
@@ -433,6 +573,23 @@ void Apollo::Region::end(void) { end(current_context); }
 void Apollo::Region::setFeature(Apollo::RegionContext *context, float value)
 {
   context->features.push_back(value);
+#ifdef PERF_CNTR_MODE
+    // Check to see if we've already seen this feature set before
+    // If not, let's set the flag to run the counters 
+    // If so, we should just not run the counter code
+    // as we know the counter values already since they're policy-independent
+    if(this->papiPerfCnt && context->features.size() == this->num_features){
+        this->shouldRunCounters = (this->feats_to_cntr_vals.find(context->features) == this->feats_to_cntr_vals.end());
+
+        // If we already have run the counters, then translate the passed-in
+        // feature vector so we can properly getPolicyIndex() if a tree has
+        // already been trained
+        if(!this->shouldRunCounters){
+            context->features = this->feats_to_cntr_vals[context->features];
+        }
+    }
+#endif
+
   return;
 }
 

@@ -123,6 +123,55 @@ def compute_accuracy(rank, data, opt_data, npolicies, DIFF_PCT, init_model, trai
     print('===')
     return (nmatch, nrelaxed, nrows)
 
+def compute_time_weighted_accuracy(rank, data, opt_data, npolicies, DIFF_PCT, init_model, trained_model):
+    # Create dataframes indexed by region, idx to match with isin() in opt (avoids index mismatch).
+    # This df contains the run information while using the decision trees
+    data_region_idx = data.loc[(data['rankid'] == rank) & \
+        #(data['training'].str.contains('RoundRobin|DecisionTree', regex=True))] \
+        (data['training'].str.contains(trained_model))] \
+        [['region', 'idx', 'policy', 'xtime']].set_index( \
+        ['region', 'idx']).sort_index()
+
+    # This df contains the optimal policy for each step of the execution
+    opt_region_idx = opt_data[['policy', 'xtime']]
+
+    # This DF contains the indicators of optimal execution or not 
+    cond = data_region_idx[['policy']].isin(opt_region_idx[['policy']])
+
+    nrows = len(cond.index)
+    nmatch = cond[cond['policy'] == True].count()
+    print('= %s|%s'%(init_model, trained_model))
+    print('Rank %d %s|%s accuracy %.2f%%'%(rank, init_model, trained_model, (nmatch*100.0)/nrows))
+    #input('cont')
+
+    (hist, bins) = np.histogram(opt_region_idx['policy'], bins=np.arange(npolicies))
+    print('Rank %d Opt'%(rank), *list(zip(bins[:-1], hist)))
+    (hist, bins) = np.histogram(data_region_idx['policy'], bins=np.arange(npolicies))
+    print('Rank %d %s|%s'%(rank, init_model, trained_model), *list(zip(bins[:-1], hist)))
+
+    # Compute relaxed accuracy +/- 10% of optimal
+    # Exclude matching policy indices for relaxed accuracy
+    data_region_idx = data_region_idx[~data_region_idx.index\
+            .isin(cond[cond['policy'] == True].index)]
+    opt_region_idx = opt_region_idx[~opt_region_idx.index.isin(cond[cond['policy'] == True].index)]
+
+    if int(nmatch) < nrows:
+        diff_opt_rr = abs(opt_region_idx['xtime'] - data_region_idx['xtime'])*100.0 / opt_region_idx['xtime']
+        try:
+            nrelaxed = diff_opt_rr.le(DIFF_PCT).value_counts()[True]
+        except KeyError:
+            nrelaxed = 0
+        #print('le than %.2f%% %d'%( DIFF_PCT, nrelaxed))
+        #input('cont')
+        nrelaxed += nmatch
+    else:
+        nrelaxed = nmatch
+    print('Rank %d %s|%s relaxed accuracy %.2f%% (+/- %.2f%% optimal)'%(rank, init_model, trained_model,
+        (nrelaxed*100.0)/nrows, DIFF_PCT))
+
+    print('===')
+    return (nmatch, nrelaxed, nrows)
+
 def main():
     parser = argparse.ArgumentParser(description='Analyze exhaustive experiments for a program.')
     parser.add_argument('--nstatic', type=int, help='the number of policies to test.', required=True)

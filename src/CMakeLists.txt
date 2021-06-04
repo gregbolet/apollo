@@ -55,14 +55,36 @@ if (ENABLE_HIP)
         )
 endif()
 
+if (ENABLE_PERF_CNTRS)
+    list(APPEND APOLLO_SOURCES
+        perfcntrs/PapiCounters.cpp)
+endif()
+
 if (BUILD_SHARED_LIBS)
     add_library(apollo SHARED ${APOLLO_SOURCES})
 else()
     add_library(apollo STATIC ${APOLLO_SOURCES})
 endif()
 
+##### GREG added
+#
+if(ENABLE_FULL_EXPLORE)
+  #add_definitions(-DFULL_EXPLORE)
+  target_compile_definitions(apollo PUBLIC -DFULL_EXPLORE)
+endif()
+#
+##### End of GREG added
+
 if (ENABLE_MPI)
     target_link_libraries(apollo PUBLIC MPI::MPI_CXX)
+endif()
+
+if(ENABLE_PERF_CNTRS)
+    # Supply the PAPI library path
+    if(PAPI_DIR)
+        message(STATUS "LINKING PAPI!")
+        target_link_libraries(apollo PUBLIC ${PAPI_DIR}/lib/libpapi.so)
+    endif()
 endif()
 
 if (ENABLE_OPENCV)
