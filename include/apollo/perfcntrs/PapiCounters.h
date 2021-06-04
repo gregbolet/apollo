@@ -9,9 +9,9 @@
 #include <mutex>
 #include <vector>
 #include <map>
-//#include "papi.h"
+#include "papi.h"
 #include "apollo/perfcntrs/PerfCounter.h"
-//#include "util/spinlock.h"
+#include "util/spinlock.h"
 
 // This class assumes OMP is being used for threading
 // We will change this use case in the future once we get something working
@@ -19,21 +19,21 @@
 class PapiCounters : public PerfCounter{
 
     public:
-        //PapiCounters(int isMultiplexed, int numEvents, std::string* eventNames);
-        PapiCounters();
+        PapiCounters(int isMultiplexed, int numEvents, std::string* eventNames);
+        //PapiCounters();
         ~PapiCounters();
 
         //void startThread() override;
         //void stopThread() override;        
         
-    //private:
-        //int isMultiplexed;
-        //int numEvents;
+    private:
+        int isMultiplexed;
+        int numEvents;
 
         // Keep our event names in here
-        // std::string* event_names_to_track;
+         std::string* event_names_to_track;
 
-        /*
+        
         // Shared spinlock for setting up threads
         mutable util::spinlock thread_lock;
 
@@ -49,7 +49,7 @@ class PapiCounters : public PerfCounter{
         // At initialization, convert the string 
         // event names to their integer codes
         int* events_to_track;
-        */
+        
 };
 
 #endif

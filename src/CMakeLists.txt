@@ -64,10 +64,10 @@ if (ENABLE_PERF_CNTRS)
     list(APPEND APOLLO_SOURCES
         perfcntrs/PapiCounters.cpp)
 
-    list(APPEND APOLLO_HEADERS 
-        ../include/apollo/perfcntrs/PerfCounter.h
-        ../include/apollo/perfcntrs/PapiCounters.h
-        )
+    #list(APPEND APOLLO_HEADERS 
+        #../include/apollo/perfcntrs/PerfCounter.h
+        #../include/apollo/perfcntrs/PapiCounters.h
+        #)
 endif()
 
 add_library(apollo SHARED ${APOLLO_SOURCES})

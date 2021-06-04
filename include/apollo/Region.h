@@ -16,9 +16,7 @@
 #include <mpi.h>
 #endif //ENABLE_MPI
 
-#ifdef PERF_CNTR_MODE
 #include "apollo/perfcntrs/PapiCounters.h"
-#endif
 
 class Apollo::Region {
     public:
@@ -72,19 +70,16 @@ class Apollo::Region {
         std::unique_ptr<TimingModel> time_model;
         std::unique_ptr<PolicyModel> model;
 
-#ifdef PERF_CNTR_MODE
+//#ifdef PERF_CNTR_MODE
         //void apolloThreadBegin();
         //void apolloThreadEnd();
-#endif
+//#endif
 
 
     private:
 
-#ifdef PERF_CNTR_MODE
         PapiCounters* papiPerfCnt;
-        //int * mytestInt;
-        //int myInt;
-#endif
+
         //
         Apollo        *apollo;
         // DEPRECATED wil be removed

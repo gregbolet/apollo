@@ -1,14 +1,7 @@
 
 #include "apollo/perfcntrs/PapiCounters.h"
 
-PapiCounters::PapiCounters(){
-	return;
-}
-PapiCounters::~PapiCounters(){
-	return;
-}
 
-/*
 // Initialize PAPI and keep the perfcntr names we want to track
 PapiCounters::PapiCounters(int isMultiplexed, 
                            int numEvents, 
@@ -69,9 +62,9 @@ PapiCounters::PapiCounters(int isMultiplexed,
 
     return;
 }
-*/
 
-/*
+
+
 // Nothing to free... yet
 PapiCounters::~PapiCounters(){
 
@@ -90,7 +83,7 @@ PapiCounters::~PapiCounters(){
 
     return;
 }
-*/
+
 
 /*
 void PapiCounters::startThread(){

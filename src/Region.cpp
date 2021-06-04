@@ -199,8 +199,8 @@ Apollo::Region::Region(
     }
 
 #ifdef PERF_CNTR_MODE
-    //std::string events[3] = {"PAPI_L1_TCM", "PAPI_L2_TCM", "PAPI_L3_TCM"};
-    //this->papiPerfCnt = new PapiCounters(0, 3, events);
+    std::string events[3] = {"PAPI_L1_TCM", "PAPI_L2_TCM", "PAPI_L3_TCM"};
+    this->papiPerfCnt = new PapiCounters(0, 3, events);
     //this->papiPerfCnt = new PapiCounters();
 #endif
 
@@ -214,9 +214,7 @@ Apollo::Region::~Region()
 {
 
 #ifdef PERF_CNTR_MODE
-    //delete this->papiPerfCnt;
-    //this->papiPerfCnt = nullptr;
-    //printf("\tDeleted papiPerfCnt object!\n");
+    delete this->papiPerfCnt;
 #endif
 
     // Disable period based flushing.
@@ -249,14 +247,14 @@ Apollo::Region::begin()
     return context;
 }
 
-#ifdef PERF_CNTR_MODE
+//#ifdef PERF_CNTR_MODE
 //void Apollo::Region::apolloThreadBegin(){
     //this->papiPerfCnt->startThread();
 //}
 //void Apollo::Region::apolloThreadEnd(){
     //this->papiPerfCnt->stopThread();
 //}
-#endif
+//#endif
 
 Apollo::RegionContext *
 Apollo::Region::begin(std::vector<float> features)
