@@ -23,15 +23,15 @@ class PapiCounters : public PerfCounter{
         //PapiCounters();
         ~PapiCounters();
 
-        //void startThread() override;
-        //void stopThread() override;        
+        void startThread() override;
+        void stopThread() override;        
         
     private:
         int isMultiplexed;
         int numEvents;
 
         // Keep our event names in here
-         std::string* event_names_to_track;
+        std::string* event_names_to_track;
 
         
         // Shared spinlock for setting up threads

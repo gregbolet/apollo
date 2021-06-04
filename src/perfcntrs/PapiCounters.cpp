@@ -63,19 +63,24 @@ PapiCounters::PapiCounters(int isMultiplexed,
     return;
 }
 
-
-
-// Nothing to free... yet
 PapiCounters::~PapiCounters(){
 
     // Destroy the events_to_track
     free(this->events_to_track);
 
-    printf("Finished freeing events to track!\n");
+    //printf("Finished freeing events to track!\n");
+	printf("Collected: %d measurements\n", this->all_cntr_values.size());
 
     // Free the counter arrays
     for(std::vector<long long*>::iterator i = std::begin(this->all_cntr_values);
         i != std::end(this->all_cntr_values); ++i){
+
+			//print the values before we drop them
+			for(int j = 0; j < this->numEvents; ++j){
+				printf("%lu \t", (*i)[j]);
+			}
+			printf("\n");
+
             free(*i);
     }
 
@@ -85,8 +90,9 @@ PapiCounters::~PapiCounters(){
 }
 
 
-/*
 void PapiCounters::startThread(){
+
+	//printf("In startThread()\n");
 
     // Keep track of the eventset identifier for this thread
  	int EventSet = PAPI_NULL;
@@ -152,6 +158,10 @@ void PapiCounters::startThread(){
 
 void PapiCounters::stopThread(){
 
+	//printf("In stopThread()\n");
+	//printf("My map size: %d\n", this->thread_id_to_eventset.size());
+	//printf("My other map size: %d\n", this->thread_id_to_cntr_ptr.size());
+
     int threadId = omp_get_thread_num();
     int EventSet = this->thread_id_to_eventset[threadId];
     long long* cntr_vals = this->thread_id_to_cntr_ptr[threadId];
@@ -161,6 +171,13 @@ void PapiCounters::stopThread(){
 	// Store the resulting values into our counter values array
 	if ( ( retval = PAPI_stop( EventSet, cntr_vals ) ) != PAPI_OK){
 		fprintf(stderr, "Could NOT stop eventset counting!\n");
+	}
+
+	// Store the pointer to that memory into our list
+    // Lock this little scope to store the counter values 
+    {
+        std::lock_guard<util::spinlock> g(thread_lock);
+		this->all_cntr_values.push_back(cntr_vals);
 	}
 
 	// Remove all events from the eventset
@@ -179,4 +196,3 @@ void PapiCounters::stopThread(){
 	}
 }
 
-*/
