@@ -16,6 +16,10 @@
 #include <mpi.h>
 #endif //ENABLE_MPI
 
+#ifdef PERF_CNTR_MODE
+#include "apollo/perfcntrs/PapiCounters.h"
+#endif
+
 class Apollo::Region {
     public:
         Region(
@@ -68,7 +72,19 @@ class Apollo::Region {
         std::unique_ptr<TimingModel> time_model;
         std::unique_ptr<PolicyModel> model;
 
+#ifdef PERF_CNTR_MODE
+        //void apolloThreadBegin();
+        //void apolloThreadEnd();
+#endif
+
+
     private:
+
+#ifdef PERF_CNTR_MODE
+        PapiCounters* papiPerfCnt;
+        //int * mytestInt;
+        //int myInt;
+#endif
         //
         Apollo        *apollo;
         // DEPRECATED wil be removed
@@ -79,6 +95,8 @@ class Apollo::Region {
         std::vector<Apollo::RegionContext *> pending_contexts;
         void collectPendingContexts();
         void collectContext(Apollo::RegionContext *, double);
+
+
 }; // end: Apollo::Region
 
 struct Apollo::RegionContext
