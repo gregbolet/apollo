@@ -77,6 +77,7 @@ class Apollo::Region {
         PapiCounters* papiPerfCnt;
         std::vector<float> lastFeats;
 
+        void collectPendingContexts();
     private:
 
 
@@ -88,7 +89,6 @@ class Apollo::Region {
         std::ofstream trace_file;
 
         std::vector<Apollo::RegionContext *> pending_contexts;
-        void collectPendingContexts();
         void collectContext(Apollo::RegionContext *, double);
 
 
