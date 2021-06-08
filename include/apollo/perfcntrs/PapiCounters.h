@@ -25,6 +25,8 @@ class PapiCounters : public PerfCounter{
 
         void startThread() override;
         void stopThread() override;        
+        void clearAllCntrValues() override; 
+        std::vector<float> getSummaryStats() override;
         
     private:
         int isMultiplexed;

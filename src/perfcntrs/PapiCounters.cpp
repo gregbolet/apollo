@@ -71,18 +71,7 @@ PapiCounters::~PapiCounters(){
     //printf("Finished freeing events to track!\n");
 	printf("Collected: %d measurements\n", this->all_cntr_values.size());
 
-    // Free the counter arrays
-    for(std::vector<long long*>::iterator i = std::begin(this->all_cntr_values);
-        i != std::end(this->all_cntr_values); ++i){
-
-			//print the values before we drop them
-			for(int j = 0; j < this->numEvents; ++j){
-				printf("%lu \t", (*i)[j]);
-			}
-			printf("\n");
-
-            free(*i);
-    }
+	this->clearAllCntrValues();
 
 	PAPI_shutdown();
 
@@ -194,5 +183,56 @@ void PapiCounters::stopThread(){
 	if ( ( retval = PAPI_unregister_thread(  ) ) != PAPI_OK ) {
 		fprintf(stderr, "PAPI could not unregister thread!\n");
 	}
+}
+
+void PapiCounters::clearAllCntrValues(){
+
+    // Free the counter arrays
+    for(std::vector<long long*>::iterator i = std::begin(this->all_cntr_values);
+        i != std::end(this->all_cntr_values); ++i){
+
+			//print the values before we drop them
+			for(int j = 0; j < this->numEvents; ++j){
+				printf("%lld \t", (*i)[j]);
+			}
+			printf("\n");
+
+            free(*i);
+    }
+}
+
+std::vector<float> PapiCounters::getSummaryStats(){
+	// Calculate the min, max, mean of each perf counter
+	// return a vector of the values, where every 3 values in the array corresponds to a perf counter
+	std::vector<float> toRet;
+
+	long long min, max, mean, val;
+	int i, j;
+
+	// Go through each event
+	for(j = 0; j < this->numEvents; ++j){
+
+		// Default to the first thread's values
+		min = max = mean = this->all_cntr_values[0][j];
+
+		// Loop to calculate the min, max, mean for this counter
+		for(i=1; i < this->all_cntr_values.size(); ++i){
+			val = this->all_cntr_values[i][j];
+
+			if(val >= max){ max = val; }
+			if(val <= min){ min = val; }
+			mean += val;
+		}
+
+		mean = mean/i;
+
+		toRet.push_back((float) min);
+		toRet.push_back((float) max);
+		toRet.push_back((float) mean);
+
+		printf("min: %lld, max: %lld, mean: %lld\n", min, max, mean);
+	}
+
+	return toRet;
 }
 

@@ -267,9 +267,24 @@ Apollo::Region::begin(std::vector<float> features)
 void
 Apollo::Region::collectContext(Apollo::RegionContext *context, double metric)
 {
+#ifdef PERF_CNTR_MODE
+  // If performance counters are enabled, let's add them in to the region features vector
+  // First calculate the min, max, mean of each counter
+  std::vector<float> vals = this->papiPerfCnt->getSummaryStats();
+
+  // Add the new features to the feature list
+  for(int i = 0; i < vals.size(); ++i){
+      context->features.push_back(vals[i]);
+  }
+
+  // Clear the PapiCounters counter values
+  this->papiPerfCnt->clearAllCntrValues();
+#endif
+
   // std::cout << "COLLECT CONTEXT " << context->idx << " REGION " << name \
             << " metric " << metric << std::endl;
   auto iter = measures.find({context->features, context->policy});
+  // If we didn't find a feature/policy pair, add it in
   if (iter == measures.end()) {
     iter = measures
                .insert(std::make_pair(
@@ -277,7 +292,9 @@ Apollo::Region::collectContext(Apollo::RegionContext *context, double metric)
                    std::move(
                        std::make_unique<Apollo::Region::Measure>(1, metric))))
                .first;
-    } else {
+    }
+    // otherwise, add to the one we found -- we average out the exec time later for repeated runs
+    else {
         iter->second->exec_count++;
         iter->second->time_total += metric;
     }
@@ -300,6 +317,7 @@ Apollo::Region::collectContext(Apollo::RegionContext *context, double metric)
         apollo->flushAllRegionMeasurements(apollo->region_executions);
     }
 
+    // delete the RegionContext struct
     delete context;
     current_context = nullptr;
 }

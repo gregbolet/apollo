@@ -65,7 +65,7 @@ class Apollo::Region {
         std::map<
             std::pair< std::vector<float>, int >,
             std::unique_ptr<Apollo::Region::Measure> > measures;
-        //^--Explanation: < features, policy >, value: < time measurement >
+        //^--Explanation--> key: < features, policy >, value: < time measurement >
 
         std::unique_ptr<TimingModel> time_model;
         std::unique_ptr<PolicyModel> model;
@@ -73,9 +73,10 @@ class Apollo::Region {
         void apolloThreadBegin();
         void apolloThreadEnd();
 
+        PapiCounters* papiPerfCnt;
+
     private:
 
-        PapiCounters* papiPerfCnt;
 
         //
         Apollo        *apollo;
