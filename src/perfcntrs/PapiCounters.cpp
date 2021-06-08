@@ -199,6 +199,8 @@ void PapiCounters::clearAllCntrValues(){
 
             free(*i);
     }
+
+	this->all_cntr_values.clear();
 }
 
 std::vector<float> PapiCounters::getSummaryStats(){
