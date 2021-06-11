@@ -59,6 +59,7 @@ set(APOLLO_SOURCES
     models/DecisionTree.cpp
     models/RegressionTree.cpp
     models/FullExplore.cpp
+    models/Optimal.cpp
     )
 
 if (ENABLE_PERF_CNTRS)

@@ -5,6 +5,7 @@
 #include "apollo/models/RoundRobin.h"
 #include "apollo/models/DecisionTree.h"
 #include "apollo/models/RegressionTree.h"
+#include "apollo/models/Optimal.h"
 
 #ifdef FULL_EXPLORE
 #include "apollo/models/FullExplore.h"
@@ -46,3 +47,6 @@ std::unique_ptr<TimingModel> ModelFactory::createRegressionTree(
     return std::make_unique<RegressionTree>( features, responses );
 }
 
+std::unique_ptr<PolicyModel> ModelFactory::createOptimal(std::string file) {
+  return std::make_unique<Optimal>(file);
+}
