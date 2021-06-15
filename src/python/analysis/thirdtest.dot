@@ -1,0 +1,734 @@
+digraph G {root [ shape=box, label="{
+format: 3,
+is_classifier: 1,
+var_all: 5,
+var_count: 4,
+ord_var_count: 4,
+cat_var_count: 1,
+training_params: {
+use_surrogates: 0,
+max_categories: 5,
+regression_accuracy: 0.000000,
+max_depth: 2,
+min_sample_count: 1,
+cross_validation_folds: 0,
+nactive_vars: 0,
+ }
+,
+global_var_idx: 1,
+var_idx: [ 0, 1, 2, 3 ]
+,
+var_type: [ 0, 0, 0, 0, 1 ]
+,
+cat_ofs: [ 0, 0, 0, 0, 0, 0, 0, 0 ]
+,
+class_labels: [ 0, 1, 2, 3, 4 ]
+,
+missing_subst: [ 0.000000, 0.000000, 0.000000, 0.000000, 0.000000 ]
+,
+oob_error: 0.815789,
+ntrees: 10,
+ }
+"];
+tree_0_d_0_n_0 [ label="{
+depth: 0,
+value: 0.000000,
+norm_class_idx: 0,
+splits: [ {
+var: 3,
+quality: 26.690475,
+le: 293095.500000,
+ }
+ ]
+,
+ }
+" ];
+tree_0_d_1_n_1 [ label="{
+depth: 1,
+value: 1.000000,
+norm_class_idx: 1,
+splits: [ {
+var: 1,
+quality: 11.709091,
+le: 67048.000000,
+ }
+ ]
+,
+ }
+" ];
+tree_0_d_2_n_2 [ label="{
+depth: 2,
+value: 0.000000,
+norm_class_idx: 0,
+ }
+" ];
+tree_0_d_2_n_3 [ label="{
+depth: 2,
+value: 1.000000,
+norm_class_idx: 1,
+ }
+" ];
+tree_0_d_1_n_4 [ label="{
+depth: 1,
+value: 3.000000,
+norm_class_idx: 3,
+splits: [ {
+var: 2,
+quality: 23.078369,
+le: 426207.000000,
+ }
+ ]
+,
+ }
+" ];
+tree_0_d_2_n_5 [ label="{
+depth: 2,
+value: 3.000000,
+norm_class_idx: 3,
+ }
+" ];
+tree_0_d_2_n_6 [ label="{
+depth: 2,
+value: 0.000000,
+norm_class_idx: 0,
+ }
+" ];
+tree_0_d_0_n_0 -> tree_0_d_1_n_1;
+tree_0_d_1_n_1 -> tree_0_d_2_n_2;
+tree_0_d_1_n_1 -> tree_0_d_2_n_3;
+tree_0_d_0_n_0 -> tree_0_d_1_n_4;
+tree_0_d_1_n_4 -> tree_0_d_2_n_5;
+tree_0_d_1_n_4 -> tree_0_d_2_n_6;
+root -> tree_0_d_0_n_0;
+tree_1_d_0_n_0 [ label="{
+depth: 0,
+value: 2.000000,
+norm_class_idx: 2,
+splits: [ {
+var: 2,
+quality: 24.164835,
+le: 263457104.000000,
+ }
+ ]
+,
+ }
+" ];
+tree_1_d_1_n_1 [ label="{
+depth: 1,
+value: 2.000000,
+norm_class_idx: 2,
+splits: [ {
+var: 3,
+quality: 21.227451,
+le: 541267648.000000,
+ }
+ ]
+,
+ }
+" ];
+tree_1_d_2_n_2 [ label="{
+depth: 2,
+value: 2.000000,
+norm_class_idx: 2,
+ }
+" ];
+tree_1_d_2_n_3 [ label="{
+depth: 2,
+value: 4.000000,
+norm_class_idx: 4,
+ }
+" ];
+tree_1_d_1_n_4 [ label="{
+depth: 1,
+value: 0.000000,
+norm_class_idx: 0,
+splits: [ {
+var: 2,
+quality: 8.083333,
+le: 788333696.000000,
+ }
+ ]
+,
+ }
+" ];
+tree_1_d_2_n_5 [ label="{
+depth: 2,
+value: 1.000000,
+norm_class_idx: 1,
+ }
+" ];
+tree_1_d_2_n_6 [ label="{
+depth: 2,
+value: 0.000000,
+norm_class_idx: 0,
+ }
+" ];
+tree_1_d_0_n_0 -> tree_1_d_1_n_1;
+tree_1_d_1_n_1 -> tree_1_d_2_n_2;
+tree_1_d_1_n_1 -> tree_1_d_2_n_3;
+tree_1_d_0_n_0 -> tree_1_d_1_n_4;
+tree_1_d_1_n_4 -> tree_1_d_2_n_5;
+tree_1_d_1_n_4 -> tree_1_d_2_n_6;
+root -> tree_1_d_0_n_0;
+tree_2_d_0_n_0 [ label="{
+depth: 0,
+value: 1.000000,
+norm_class_idx: 1,
+splits: [ {
+var: 1,
+quality: 26.010527,
+le: 39785.500000,
+ }
+ ]
+,
+ }
+" ];
+tree_2_d_1_n_1 [ label="{
+depth: 1,
+value: 1.000000,
+norm_class_idx: 1,
+splits: [ {
+var: 3,
+quality: 8.222222,
+le: 17475.000000,
+ }
+ ]
+,
+ }
+" ];
+tree_2_d_2_n_2 [ label="{
+depth: 2,
+value: 0.000000,
+norm_class_idx: 0,
+ }
+" ];
+tree_2_d_2_n_3 [ label="{
+depth: 2,
+value: 1.000000,
+norm_class_idx: 1,
+ }
+" ];
+tree_2_d_1_n_4 [ label="{
+depth: 1,
+value: 4.000000,
+norm_class_idx: 4,
+splits: [ {
+var: 0,
+quality: 22.648352,
+le: 336.000000,
+ }
+ ]
+,
+ }
+" ];
+tree_2_d_2_n_5 [ label="{
+depth: 2,
+value: 2.000000,
+norm_class_idx: 2,
+ }
+" ];
+tree_2_d_2_n_6 [ label="{
+depth: 2,
+value: 4.000000,
+norm_class_idx: 4,
+ }
+" ];
+tree_2_d_0_n_0 -> tree_2_d_1_n_1;
+tree_2_d_1_n_1 -> tree_2_d_2_n_2;
+tree_2_d_1_n_1 -> tree_2_d_2_n_3;
+tree_2_d_0_n_0 -> tree_2_d_1_n_4;
+tree_2_d_1_n_4 -> tree_2_d_2_n_5;
+tree_2_d_1_n_4 -> tree_2_d_2_n_6;
+root -> tree_2_d_0_n_0;
+tree_3_d_0_n_0 [ label="{
+depth: 0,
+value: 2.000000,
+norm_class_idx: 2,
+splits: [ {
+var: 2,
+quality: 25.409721,
+le: 38385.000000,
+ }
+ ]
+,
+ }
+" ];
+tree_3_d_1_n_1 [ label="{
+depth: 1,
+value: 1.000000,
+norm_class_idx: 1,
+splits: [ {
+var: 1,
+quality: 9.000000,
+le: 17310.000000,
+ }
+ ]
+,
+ }
+" ];
+tree_3_d_2_n_2 [ label="{
+depth: 2,
+value: 0.000000,
+norm_class_idx: 0,
+ }
+" ];
+tree_3_d_2_n_3 [ label="{
+depth: 2,
+value: 1.000000,
+norm_class_idx: 1,
+ }
+" ];
+tree_3_d_1_n_4 [ label="{
+depth: 1,
+value: 2.000000,
+norm_class_idx: 2,
+splits: [ {
+var: 1,
+quality: 24.416952,
+le: 149690.000000,
+ }
+ ]
+,
+ }
+" ];
+tree_3_d_2_n_5 [ label="{
+depth: 2,
+value: 3.000000,
+norm_class_idx: 3,
+ }
+" ];
+tree_3_d_2_n_6 [ label="{
+depth: 2,
+value: 2.000000,
+norm_class_idx: 2,
+ }
+" ];
+tree_3_d_0_n_0 -> tree_3_d_1_n_1;
+tree_3_d_1_n_1 -> tree_3_d_2_n_2;
+tree_3_d_1_n_1 -> tree_3_d_2_n_3;
+tree_3_d_0_n_0 -> tree_3_d_1_n_4;
+tree_3_d_1_n_4 -> tree_3_d_2_n_5;
+tree_3_d_1_n_4 -> tree_3_d_2_n_6;
+root -> tree_3_d_0_n_0;
+tree_4_d_0_n_0 [ label="{
+depth: 0,
+value: 2.000000,
+norm_class_idx: 2,
+splits: [ {
+var: 0,
+quality: 26.080460,
+le: 8346.000000,
+ }
+ ]
+,
+ }
+" ];
+tree_4_d_1_n_1 [ label="{
+depth: 1,
+value: 2.000000,
+norm_class_idx: 2,
+splits: [ {
+var: 2,
+quality: 11.650000,
+le: 105749.500000,
+ }
+ ]
+,
+ }
+" ];
+tree_4_d_2_n_2 [ label="{
+depth: 2,
+value: 2.000000,
+norm_class_idx: 2,
+ }
+" ];
+tree_4_d_2_n_3 [ label="{
+depth: 2,
+value: 4.000000,
+norm_class_idx: 4,
+ }
+" ];
+tree_4_d_1_n_4 [ label="{
+depth: 1,
+value: 0.000000,
+norm_class_idx: 0,
+splits: [ {
+var: 3,
+quality: 24.006723,
+le: 131327.500000,
+ }
+ ]
+,
+ }
+" ];
+tree_4_d_2_n_5 [ label="{
+depth: 2,
+value: 0.000000,
+norm_class_idx: 0,
+ }
+" ];
+tree_4_d_2_n_6 [ label="{
+depth: 2,
+value: 1.000000,
+norm_class_idx: 1,
+ }
+" ];
+tree_4_d_0_n_0 -> tree_4_d_1_n_1;
+tree_4_d_1_n_1 -> tree_4_d_2_n_2;
+tree_4_d_1_n_1 -> tree_4_d_2_n_3;
+tree_4_d_0_n_0 -> tree_4_d_1_n_4;
+tree_4_d_1_n_4 -> tree_4_d_2_n_5;
+tree_4_d_1_n_4 -> tree_4_d_2_n_6;
+root -> tree_4_d_0_n_0;
+tree_5_d_0_n_0 [ label="{
+depth: 0,
+value: 4.000000,
+norm_class_idx: 4,
+splits: [ {
+var: 1,
+quality: 25.266924,
+le: 394954528.000000,
+ }
+ ]
+,
+ }
+" ];
+tree_5_d_1_n_1 [ label="{
+depth: 1,
+value: 4.000000,
+norm_class_idx: 4,
+splits: [ {
+var: 1,
+quality: 23.532467,
+le: 134674.000000,
+ }
+ ]
+,
+ }
+" ];
+tree_5_d_2_n_2 [ label="{
+depth: 2,
+value: 1.000000,
+norm_class_idx: 1,
+ }
+" ];
+tree_5_d_2_n_3 [ label="{
+depth: 2,
+value: 4.000000,
+norm_class_idx: 4,
+ }
+" ];
+tree_5_d_1_n_4 [ label="{
+depth: 1,
+value: 0.000000,
+norm_class_idx: 0,
+splits: [ {
+var: 2,
+quality: 6.428571,
+le: 525747584.000000,
+ }
+ ]
+,
+ }
+" ];
+tree_5_d_2_n_5 [ label="{
+depth: 2,
+value: 0.000000,
+norm_class_idx: 0,
+ }
+" ];
+tree_5_d_2_n_6 [ label="{
+depth: 2,
+value: 0.000000,
+norm_class_idx: 0,
+ }
+" ];
+tree_5_d_0_n_0 -> tree_5_d_1_n_1;
+tree_5_d_1_n_1 -> tree_5_d_2_n_2;
+tree_5_d_1_n_1 -> tree_5_d_2_n_3;
+tree_5_d_0_n_0 -> tree_5_d_1_n_4;
+tree_5_d_1_n_4 -> tree_5_d_2_n_5;
+tree_5_d_1_n_4 -> tree_5_d_2_n_6;
+root -> tree_5_d_0_n_0;
+tree_6_d_0_n_0 [ label="{
+depth: 0,
+value: 2.000000,
+norm_class_idx: 2,
+splits: [ {
+var: 1,
+quality: 24.847221,
+le: 38392.000000,
+ }
+ ]
+,
+ }
+" ];
+tree_6_d_1_n_1 [ label="{
+depth: 1,
+value: 0.000000,
+norm_class_idx: 0,
+splits: [ {
+var: 1,
+quality: 7.400000,
+le: 19063.500000,
+ }
+ ]
+,
+ }
+" ];
+tree_6_d_2_n_2 [ label="{
+depth: 2,
+value: 0.000000,
+norm_class_idx: 0,
+ }
+" ];
+tree_6_d_2_n_3 [ label="{
+depth: 2,
+value: 1.000000,
+norm_class_idx: 1,
+ }
+" ];
+tree_6_d_1_n_4 [ label="{
+depth: 1,
+value: 2.000000,
+norm_class_idx: 2,
+splits: [ {
+var: 1,
+quality: 25.366079,
+le: 92432.500000,
+ }
+ ]
+,
+ }
+" ];
+tree_6_d_2_n_5 [ label="{
+depth: 2,
+value: 2.000000,
+norm_class_idx: 2,
+ }
+" ];
+tree_6_d_2_n_6 [ label="{
+depth: 2,
+value: 4.000000,
+norm_class_idx: 4,
+ }
+" ];
+tree_6_d_0_n_0 -> tree_6_d_1_n_1;
+tree_6_d_1_n_1 -> tree_6_d_2_n_2;
+tree_6_d_1_n_1 -> tree_6_d_2_n_3;
+tree_6_d_0_n_0 -> tree_6_d_1_n_4;
+tree_6_d_1_n_4 -> tree_6_d_2_n_5;
+tree_6_d_1_n_4 -> tree_6_d_2_n_6;
+root -> tree_6_d_0_n_0;
+tree_7_d_0_n_0 [ label="{
+depth: 0,
+value: 2.000000,
+norm_class_idx: 2,
+splits: [ {
+var: 1,
+quality: 24.686869,
+le: 33906.000000,
+ }
+ ]
+,
+ }
+" ];
+tree_7_d_1_n_1 [ label="{
+depth: 1,
+value: 0.000000,
+norm_class_idx: 0,
+splits: [ {
+var: 2,
+quality: 6.000000,
+le: 14421.000000,
+ }
+ ]
+,
+ }
+" ];
+tree_7_d_2_n_2 [ label="{
+depth: 2,
+value: 1.000000,
+norm_class_idx: 1,
+ }
+" ];
+tree_7_d_2_n_3 [ label="{
+depth: 2,
+value: 0.000000,
+norm_class_idx: 0,
+ }
+" ];
+tree_7_d_1_n_4 [ label="{
+depth: 1,
+value: 2.000000,
+norm_class_idx: 2,
+splits: [ {
+var: 2,
+quality: 23.322344,
+le: 94895.000000,
+ }
+ ]
+,
+ }
+" ];
+tree_7_d_2_n_5 [ label="{
+depth: 2,
+value: 2.000000,
+norm_class_idx: 2,
+ }
+" ];
+tree_7_d_2_n_6 [ label="{
+depth: 2,
+value: 4.000000,
+norm_class_idx: 4,
+ }
+" ];
+tree_7_d_0_n_0 -> tree_7_d_1_n_1;
+tree_7_d_1_n_1 -> tree_7_d_2_n_2;
+tree_7_d_1_n_1 -> tree_7_d_2_n_3;
+tree_7_d_0_n_0 -> tree_7_d_1_n_4;
+tree_7_d_1_n_4 -> tree_7_d_2_n_5;
+tree_7_d_1_n_4 -> tree_7_d_2_n_6;
+root -> tree_7_d_0_n_0;
+tree_8_d_0_n_0 [ label="{
+depth: 0,
+value: 3.000000,
+norm_class_idx: 3,
+splits: [ {
+var: 1,
+quality: 29.989246,
+le: 27872.000000,
+ }
+ ]
+,
+ }
+" ];
+tree_8_d_1_n_1 [ label="{
+depth: 1,
+value: 1.000000,
+norm_class_idx: 1,
+splits: [ {
+var: 3,
+quality: 12.000000,
+le: 19228.500000,
+ }
+ ]
+,
+ }
+" ];
+tree_8_d_2_n_2 [ label="{
+depth: 2,
+value: 0.000000,
+norm_class_idx: 0,
+ }
+" ];
+tree_8_d_2_n_3 [ label="{
+depth: 2,
+value: 1.000000,
+norm_class_idx: 1,
+ }
+" ];
+tree_8_d_1_n_4 [ label="{
+depth: 1,
+value: 3.000000,
+norm_class_idx: 3,
+splits: [ {
+var: 1,
+quality: 24.103449,
+le: 92432.500000,
+ }
+ ]
+,
+ }
+" ];
+tree_8_d_2_n_5 [ label="{
+depth: 2,
+value: 2.000000,
+norm_class_idx: 2,
+ }
+" ];
+tree_8_d_2_n_6 [ label="{
+depth: 2,
+value: 3.000000,
+norm_class_idx: 3,
+ }
+" ];
+tree_8_d_0_n_0 -> tree_8_d_1_n_1;
+tree_8_d_1_n_1 -> tree_8_d_2_n_2;
+tree_8_d_1_n_1 -> tree_8_d_2_n_3;
+tree_8_d_0_n_0 -> tree_8_d_1_n_4;
+tree_8_d_1_n_4 -> tree_8_d_2_n_5;
+tree_8_d_1_n_4 -> tree_8_d_2_n_6;
+root -> tree_8_d_0_n_0;
+tree_9_d_0_n_0 [ label="{
+depth: 0,
+value: 4.000000,
+norm_class_idx: 4,
+splits: [ {
+var: 3,
+quality: 26.749144,
+le: 1395061.500000,
+ }
+ ]
+,
+ }
+" ];
+tree_9_d_1_n_1 [ label="{
+depth: 1,
+value: 3.000000,
+norm_class_idx: 3,
+splits: [ {
+var: 3,
+quality: 12.875000,
+le: 386225.000000,
+ }
+ ]
+,
+ }
+" ];
+tree_9_d_2_n_2 [ label="{
+depth: 2,
+value: 0.000000,
+norm_class_idx: 0,
+ }
+" ];
+tree_9_d_2_n_3 [ label="{
+depth: 2,
+value: 3.000000,
+norm_class_idx: 3,
+ }
+" ];
+tree_9_d_1_n_4 [ label="{
+depth: 1,
+value: 4.000000,
+norm_class_idx: 4,
+splits: [ {
+var: 0,
+quality: 25.149160,
+le: 385007.500000,
+ }
+ ]
+,
+ }
+" ];
+tree_9_d_2_n_5 [ label="{
+depth: 2,
+value: 4.000000,
+norm_class_idx: 4,
+ }
+" ];
+tree_9_d_2_n_6 [ label="{
+depth: 2,
+value: 4.000000,
+norm_class_idx: 4,
+ }
+" ];
+tree_9_d_0_n_0 -> tree_9_d_1_n_1;
+tree_9_d_1_n_1 -> tree_9_d_2_n_2;
+tree_9_d_1_n_1 -> tree_9_d_2_n_3;
+tree_9_d_0_n_0 -> tree_9_d_1_n_4;
+tree_9_d_1_n_4 -> tree_9_d_2_n_5;
+tree_9_d_1_n_4 -> tree_9_d_2_n_6;
+root -> tree_9_d_0_n_0;
+
+}

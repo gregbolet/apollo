@@ -192,10 +192,10 @@ void PapiCounters::clearAllCntrValues(){
         i != std::end(this->all_cntr_values); ++i){
 
 			//print the values before we drop them
-			for(int j = 0; j < this->numEvents; ++j){
-				printf("%lld \t", (*i)[j]);
-			}
-			printf("\n");
+			//for(int j = 0; j < this->numEvents; ++j){
+				//printf("%lld \t", (*i)[j]);
+			//}
+			//printf("\n");
 
             free(*i);
     }
@@ -208,7 +208,7 @@ std::vector<float> PapiCounters::getSummaryStats(){
 	// return a vector of the values, where every 3 values in the array corresponds to a perf counter
 	std::vector<float> toRet;
 
-	long long min, max, mean, val;
+	long long min, max, mean, sum, val;
 	int i, j;
 
 	// Go through each event
@@ -226,13 +226,15 @@ std::vector<float> PapiCounters::getSummaryStats(){
 			mean += val;
 		}
 
+		sum = mean;
 		mean = mean/i;
 
 		toRet.push_back((float) min);
 		toRet.push_back((float) max);
 		toRet.push_back((float) mean);
+		toRet.push_back((float) sum);
 
-		printf("min: %lld, max: %lld, mean: %lld\n", min, max, mean);
+		printf("min: %lld, max: %lld, mean: %lld, sum: %lld\n", min, max, mean, sum);
 	}
 
 	return toRet;

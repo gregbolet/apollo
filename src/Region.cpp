@@ -199,9 +199,8 @@ Apollo::Region::Region(
     }
 
 #ifdef PERF_CNTR_MODE
-    std::string events[3] = {"PAPI_L1_TCM", "PAPI_L2_TCM", "PAPI_L3_TCM"};
-    this->papiPerfCnt = new PapiCounters(0, 3, events);
-    //this->papiPerfCnt = new PapiCounters();
+    std::string events[1] = {"PAPI_TOT_INS"};
+    this->papiPerfCnt = new PapiCounters(0, 1, events);
 #endif
 
     //std::cout << "Insert region " << name << " ptr " << this << std::endl;
@@ -438,6 +437,8 @@ Apollo::Region::reduceBestPolicies(int step)
         }
         else {
             // Key exists
+            // If the execution time of this feature+policy is faster than the best,
+            // then replace the best policy.
             if(  best_policies[ feature_vector ].second > time_avg ) {
                 best_policies[ feature_vector ] = { policy_index, time_avg };
             }
