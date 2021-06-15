@@ -58,6 +58,7 @@ set(APOLLO_SOURCES
     models/RoundRobin.cpp
     models/DecisionTree.cpp
     models/RegressionTree.cpp
+    models/FullExplore.cpp
     )
 
 if (ENABLE_PERF_CNTRS)
@@ -71,6 +72,15 @@ if (ENABLE_PERF_CNTRS)
 endif()
 
 add_library(apollo SHARED ${APOLLO_SOURCES})
+
+##### GREG added
+#
+if(ENABLE_FULL_EXPLORE)
+  #add_definitions(-DFULL_EXPLORE)
+  target_compile_definitions(apollo PUBLIC -DFULL_EXPLORE)
+endif()
+#
+##### End of GREG added
 
 if (ENABLE_MPI)
     target_link_libraries(apollo PUBLIC MPI::MPI_CXX)

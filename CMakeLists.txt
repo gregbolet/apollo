@@ -174,6 +174,8 @@ if (ENABLE_MPI)
     endif()
 endif()
 
+##### GREG added
+#
 if(ENABLE_PERF_CNTRS)
     add_definitions(-DPERF_CNTR_MODE)
 
@@ -187,6 +189,13 @@ if(ENABLE_PERF_CNTRS)
         add_library(papi SHARED IMPORTED)
     endif()
 endif()
+
+option(ENABLE_FULL_EXPLORE "Enabled the Full Exploration Policy" ON)
+if(ENABLE_FULL_EXPLORE)
+  add_definitions(-DFULL_EXPLORE)
+endif()
+#
+##### End of GREG added
 
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
@@ -220,6 +229,7 @@ add_subdirectory(src)
 if(APOLLO_ENABLE_TESTS)
     add_subdirectory(test)
 endif(APOLLO_ENABLE_TESTS)
+
 
 #
 # EOF

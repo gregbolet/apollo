@@ -18,3 +18,5 @@ GTAGS
 GPATH
 GRTAGS
 tags
+*.dot
+*.pdf

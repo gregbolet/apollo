@@ -161,6 +161,12 @@ Apollo::Region::Region(
             model = ModelFactory::createRoundRobin(apollo->num_policies);
             //std::cout << "Model RoundRobin" << std::endl;
         }
+#ifdef FULL_EXPLORE
+        else if ("FullExplore" == model_str)
+        {
+            model = ModelFactory::createFullExplore(apollo->num_policies);
+        }
+#endif
         else
         {
             std::cerr << "Invalid model env var: " + Config::APOLLO_INIT_MODEL << std::endl;
