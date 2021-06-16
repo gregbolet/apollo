@@ -72,8 +72,10 @@ class Apollo::Region {
 
         void apolloThreadBegin();
         void apolloThreadEnd();
+        int queryPolicyModel(std::vector<float> feats);
 
         PapiCounters* papiPerfCnt;
+        std::vector<float> lastFeats;
 
     private:
 

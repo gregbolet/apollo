@@ -10,7 +10,7 @@ FullExplore::getIndex(std::vector<float> &features)
 {
     int choice;
 
-    // If we don't find the give feature, add it in
+    // If we don't find the given feature, add it in
     if( policies.find( features ) == policies.end() ) {
         policies[ features ] = 0;
     }

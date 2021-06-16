@@ -222,6 +222,12 @@ void Apollo::Region::apolloThreadBegin(){
 void Apollo::Region::apolloThreadEnd(){
     this->papiPerfCnt->stopThread();
 }
+
+// This will allow the user to query the constructed model
+int Apollo::Region::queryPolicyModel(std::vector<float> feats){
+    return this->model->getIndex(feats);
+}
+
 #endif
 
 Apollo::Region::~Region()
@@ -281,6 +287,10 @@ Apollo::Region::collectContext(Apollo::RegionContext *context, double metric)
   for(int i = 0; i < vals.size(); ++i){
       context->features.push_back(vals[i]);
   }
+
+  // Store these features for use after Region->end() call finishes
+  // and the context gets deleted (so we lose out context->feature vector)
+  this->lastFeats = vals;
 
   // Clear the PapiCounters counter values
   this->papiPerfCnt->clearAllCntrValues();

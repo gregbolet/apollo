@@ -69,7 +69,7 @@ PapiCounters::~PapiCounters(){
     free(this->events_to_track);
 
     //printf("Finished freeing events to track!\n");
-	printf("Collected: %d measurements\n", this->all_cntr_values.size());
+	//printf("Collected: %d measurements\n", this->all_cntr_values.size());
 
 	this->clearAllCntrValues();
 
@@ -229,12 +229,12 @@ std::vector<float> PapiCounters::getSummaryStats(){
 		sum = mean;
 		mean = mean/i;
 
-		toRet.push_back((float) min);
-		toRet.push_back((float) max);
-		toRet.push_back((float) mean);
+		//toRet.push_back((float) min);
+		//toRet.push_back((float) max);
+		//toRet.push_back((float) mean);
 		toRet.push_back((float) sum);
 
-		printf("min: %lld, max: %lld, mean: %lld, sum: %lld\n", min, max, mean, sum);
+		//printf("min: %lld, max: %lld, mean: %lld, sum: %lld\n", min, max, mean, sum);
 	}
 
 	return toRet;
