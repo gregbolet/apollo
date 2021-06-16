@@ -205,7 +205,8 @@ Apollo::Region::Region(
     }
 
 #ifdef PERF_CNTR_MODE
-    std::string events[1] = {"PAPI_TOT_INS"};
+    //std::string events[1] = {"PAPI_TOT_INS"};
+    std::string events[1] = {"PAPI_FP_INS"};
     this->papiPerfCnt = new PapiCounters(0, 1, events);
 #endif
 
@@ -437,7 +438,7 @@ Apollo::Region::reduceBestPolicies(int step)
         if( Config::APOLLO_TRACE_MEASURES ) {
             trace_out << "features: [ ";
             for(auto &f : feature_vector ) { \
-                trace_out << (int)f << ", ";
+                trace_out << (float)f << ", ";
             }
             trace_out << " ]: "
                 << "policy: " << policy_index
@@ -467,7 +468,7 @@ Apollo::Region::reduceBestPolicies(int step)
         for( auto &b : best_policies ) {
             trace_out << "features: [ ";
             for(auto &f : b.first )
-                trace_out << (int)f << ", ";
+                trace_out << (float) f << ", ";
             trace_out << "]: P:"
                 << b.second.first << " T: " << b.second.second << std::endl;
         }
