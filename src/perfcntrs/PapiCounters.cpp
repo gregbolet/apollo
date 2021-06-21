@@ -4,13 +4,13 @@
 
 // Initialize PAPI and keep the perfcntr names we want to track
 PapiCounters::PapiCounters(int isMultiplexed, 
-                           int numEvents, 
-                           std::string* eventNames)
-      :isMultiplexed(isMultiplexed), 
-       numEvents(numEvents),
+                           std::vector<std::string> eventNames)
+      :isMultiplexed(isMultiplexed),
+       numEvents(eventNames.size()),
        event_names_to_track(eventNames){
 
-    
+	//this->numEvents = eventNames.size();
+
     // Let's set up PAPI from the main thread
 	int retval;
 

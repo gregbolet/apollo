@@ -180,16 +180,13 @@ Apollo::Region::getPolicyIndex(Apollo::RegionContext *context)
     return choice;
 }
 
-Apollo::Region::Region(
+// initializaiton function used by overloaded region constructors
+void Apollo::Region::initRegion(
         const int num_features,
         const char  *regionName,
         int          numAvailablePolicies,
         Apollo::CallbackDataPool *callbackPool,
-        const std::string &modelYamlFile)
-    :
-        num_features(num_features), current_context(nullptr), idx(0), callback_pool(callbackPool)
-{
-
+        const std::string &modelYamlFile){
 
     apollo = Apollo::instance();
     if( Config::APOLLO_NUM_POLICIES ) {
@@ -308,17 +305,49 @@ Apollo::Region::Region(
 
 #ifdef PERF_CNTR_MODE
     //std::string events[1] = {"PAPI_TOT_INS"};
-    std::string events[1] = {"PAPI_FP_INS"};
-    this->papiPerfCnt = new PapiCounters(0, 1, events);
+    //std::string events[1] = {"PAPI_DP_OPS"};
+    //std::vector<std::string> events = {"PAPI_DP_OPS", "PAPI_SP_OPS"};
+    //this->papiPerfCnt = new PapiCounters(1, events);
 #endif
 
     //std::cout << "Insert region " << name << " ptr " << this << std::endl;
     const auto ret = apollo->regions.insert( { name, this } );
 
     return;
+
+}
+
+Apollo::Region::Region(
+        const int num_features,
+        const char  *regionName,
+        int          numAvailablePolicies,
+        Apollo::CallbackDataPool *callbackPool,
+        const std::string &modelYamlFile)
+    :
+        num_features(num_features), current_context(nullptr), idx(0), callback_pool(callbackPool)
+{
+    this->initRegion(num_features, regionName, numAvailablePolicies, callbackPool, modelYamlFile);
 }
 
 #ifdef PERF_CNTR_MODE
+Apollo::Region::Region(
+        const int num_features,
+        const char  *regionName,
+        int          numAvailablePolicies,
+        std::vector<std::string> papi_cntr_events,
+        int isMultiplexed,
+        Apollo::CallbackDataPool *callbackPool,
+        const std::string &modelYamlFile)
+    :
+        num_features(num_features), current_context(nullptr), idx(0), callback_pool(callbackPool)
+{
+    this->initRegion(num_features, regionName, numAvailablePolicies, callbackPool, modelYamlFile);
+    //std::string events[1] = {"PAPI_TOT_INS"};
+    //std::string events[1] = {"PAPI_DP_OPS"};
+    //std::vector<std::string> events = {"PAPI_DP_OPS", "PAPI_SP_OPS"};
+    this->papiPerfCnt = new PapiCounters(isMultiplexed, papi_cntr_events);
+}
+
 void Apollo::Region::apolloThreadBegin(){
     this->papiPerfCnt->startThread();
 }

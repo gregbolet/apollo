@@ -19,7 +19,7 @@
 class PapiCounters : public PerfCounter{
 
     public:
-        PapiCounters(int isMultiplexed, int numEvents, std::string* eventNames);
+        PapiCounters(int isMultiplexed, std::vector<std::string> eventNames);
         //PapiCounters();
         ~PapiCounters();
 
@@ -33,9 +33,8 @@ class PapiCounters : public PerfCounter{
         int numEvents;
 
         // Keep our event names in here
-        std::string* event_names_to_track;
+        std::vector<std::string> event_names_to_track;
 
-        
         // Shared spinlock for setting up threads
         mutable util::spinlock thread_lock;
 
