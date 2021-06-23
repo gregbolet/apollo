@@ -51,7 +51,8 @@ PapiCounters::PapiCounters(int isMultiplexed,
 	for(int i = 0; i < numEvents; i++){
 
         // get address of the first element of the i-th event string name
-        char* event = &((event_names_to_track[i])[0]);
+        //char* event = &((event_names_to_track[i])[0]);
+        const char* event = event_names_to_track[i].c_str(); 
 
 		if((retval = PAPI_event_name_to_code(event, &eventCode)) != PAPI_OK){
 			fprintf(stderr, "Event code for [%s] does not exist! errcode:[%d]\n", event, retval);
@@ -83,14 +84,14 @@ void PapiCounters::startThread(){
 
 	//printf("In startThread()\n");
 
-    // Keep track of the eventset identifier for this thread
+    	// Keep track of the eventset identifier for this thread
  	int EventSet = PAPI_NULL;
  	int retval;
 
 	// Register this thread with PAPI
-	if ( ( retval = PAPI_register_thread() ) != PAPI_OK ) {
-		fprintf(stderr, "PAPI thread registration error!\n");
-	}
+	//if ( ( retval = PAPI_register_thread() ) != PAPI_OK ) {
+		//fprintf(stderr, "PAPI thread registration error!\n");
+	//}
 
 	// Create the Event Set for this thread
 	if (PAPI_create_eventset(&EventSet) != PAPI_OK){
@@ -135,11 +136,11 @@ void PapiCounters::startThread(){
     }
 
 	// Zero-out all the counters in the eventset
-	if (PAPI_reset(EventSet) != PAPI_OK){
-		fprintf(stderr, "Could NOT reset eventset!\n");
-	}
+	//if (PAPI_reset(EventSet) != PAPI_OK){
+		//fprintf(stderr, "Could NOT reset eventset!\n");
+	//}
 
-	// Start counting events in the Event Set
+	// Start counting events in the Event Set implicitly zeros out counters
 	if (PAPI_start(EventSet) != PAPI_OK){
 		fprintf(stderr, "Could NOT start eventset counting!\n");
 	}
@@ -163,9 +164,9 @@ void PapiCounters::stopThread(){
 	}
 
 	// Store the pointer to that memory into our list
-    // Lock this little scope to store the counter values 
-    {
-        std::lock_guard<util::spinlock> g(thread_lock);
+    	// Lock this little scope to store the counter values 
+    	{
+        	std::lock_guard<util::spinlock> g(thread_lock);
 		this->all_cntr_values.push_back(cntr_vals);
 	}
 
@@ -180,9 +181,9 @@ void PapiCounters::stopThread(){
 	}
 
 	// Shut down this thread and free the thread ID
-	if ( ( retval = PAPI_unregister_thread(  ) ) != PAPI_OK ) {
-		fprintf(stderr, "PAPI could not unregister thread!\n");
-	}
+	//if ( ( retval = PAPI_unregister_thread(  ) ) != PAPI_OK ) {
+		//fprintf(stderr, "PAPI could not unregister thread!\n");
+	//}
 }
 
 void PapiCounters::clearAllCntrValues(){

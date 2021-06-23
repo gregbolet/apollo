@@ -324,7 +324,10 @@ Apollo::Region::Region(
         Apollo::CallbackDataPool *callbackPool,
         const std::string &modelYamlFile)
     :
-        num_features(num_features), current_context(nullptr), idx(0), callback_pool(callbackPool)
+        num_features(num_features), 
+        current_context(nullptr), 
+        idx(0), callback_pool(callbackPool),
+        papiPerfCnt(nullptr)
 {
     this->initRegion(num_features, regionName, numAvailablePolicies, callbackPool, modelYamlFile);
 }
@@ -339,12 +342,11 @@ Apollo::Region::Region(
         Apollo::CallbackDataPool *callbackPool,
         const std::string &modelYamlFile)
     :
-        num_features(num_features), current_context(nullptr), idx(0), callback_pool(callbackPool)
+        num_features(num_features), 
+        current_context(nullptr), 
+        idx(0), callback_pool(callbackPool)
 {
     this->initRegion(num_features, regionName, numAvailablePolicies, callbackPool, modelYamlFile);
-    //std::string events[1] = {"PAPI_TOT_INS"};
-    //std::string events[1] = {"PAPI_DP_OPS"};
-    //std::vector<std::string> events = {"PAPI_DP_OPS", "PAPI_SP_OPS"};
     this->papiPerfCnt = new PapiCounters(isMultiplexed, papi_cntr_events);
 }
 
@@ -366,7 +368,9 @@ Apollo::Region::~Region()
 {
 
 #ifdef PERF_CNTR_MODE
-    delete this->papiPerfCnt;
+    if(this->papiPerfCnt){
+        delete this->papiPerfCnt;
+    }
 #endif
 
     // Disable period based flushing.
@@ -414,21 +418,26 @@ void
 Apollo::Region::collectContext(Apollo::RegionContext *context, double metric)
 {
 #ifdef PERF_CNTR_MODE
-  // If performance counters are enabled, let's add them in to the region features vector
-  // First calculate the min, max, mean of each counter
-  std::vector<float> vals = this->papiPerfCnt->getSummaryStats();
+  // If the performance counters were setup
+  if(this->papiPerfCnt){
 
-  // Add the new features to the feature list
-  for(int i = 0; i < vals.size(); ++i){
-      context->features.push_back(vals[i]);
+    // If performance counters are enabled, let's add them in to the region features vector
+    // First calculate the min, max, mean of each counter
+    std::vector<float> vals = this->papiPerfCnt->getSummaryStats();
+
+    // Add the new features to the feature list
+    for(int i = 0; i < vals.size(); ++i){
+        context->features.push_back(vals[i]);
+    }
+
+    // Store these features for use after Region->end() call finishes
+    // and the context gets deleted (so we lose out context->feature vector)
+    //this->lastFeats = vals;
+    this->lastFeats = context->features;
+
+    // Clear the PapiCounters counter values
+    this->papiPerfCnt->clearAllCntrValues();
   }
-
-  // Store these features for use after Region->end() call finishes
-  // and the context gets deleted (so we lose out context->feature vector)
-  this->lastFeats = vals;
-
-  // Clear the PapiCounters counter values
-  this->papiPerfCnt->clearAllCntrValues();
 #endif
 
   // std::cout << "COLLECT CONTEXT " << context->idx << " REGION " << name \
