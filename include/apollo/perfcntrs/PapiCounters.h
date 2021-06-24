@@ -17,7 +17,7 @@
 // We will change this use case in the future once we get something working
 // For now, when setting up threads we don't do error handling
 class PapiCounters : public PerfCounter{
-
+    
     public:
         PapiCounters(int isMultiplexed, std::vector<std::string> eventNames);
         //PapiCounters();
