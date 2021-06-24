@@ -90,8 +90,13 @@ class Apollo::Region {
                 Apollo::CallbackDataPool *callbackPool = nullptr,
                 const std::string &modelYamlFile="");
 
-        PapiCounters* papiPerfCnt;
+        Apollo::PapiCounters* papiPerfCnt;
         std::vector<float> lastFeats;
+        std::map<
+            std::vector<float>, 
+            std::vector<float>
+            > feats_to_cntr_vals;
+        int shouldRunCounters; // flag to turn off/on counter monitoring
 
         void collectPendingContexts();
         void train(int step);

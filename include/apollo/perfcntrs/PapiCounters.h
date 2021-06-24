@@ -16,7 +16,7 @@
 // This class assumes OMP is being used for threading
 // We will change this use case in the future once we get something working
 // For now, when setting up threads we don't do error handling
-class PapiCounters : public PerfCounter{
+class Apollo::PapiCounters : public Apollo::PerfCounter{
     
     public:
         PapiCounters(int isMultiplexed, std::vector<std::string> eventNames);
@@ -29,8 +29,10 @@ class PapiCounters : public PerfCounter{
         std::vector<float> getSummaryStats() override;
         
     private:
+        friend class Apollo::Region;
         int isMultiplexed;
         int numEvents;
+        int runWithCounters;
 
         // Keep our event names in here
         std::vector<std::string> event_names_to_track;

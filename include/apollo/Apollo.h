@@ -27,6 +27,9 @@ class Apollo
         struct RegionContext;
         struct CallbackDataPool;
 
+        class PerfCounter;
+        class PapiCounters;
+
         //TODO(cdw): This is serving as an override that is defined by an
         //           environment variable.  Apollo::Region's are able to
         //           have different policy counts, so a global setting here

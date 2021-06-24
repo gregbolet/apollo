@@ -327,7 +327,8 @@ Apollo::Region::Region(
         num_features(num_features), 
         current_context(nullptr), 
         idx(0), callback_pool(callbackPool),
-        papiPerfCnt(nullptr)
+        papiPerfCnt(nullptr),
+        shouldRunCounters(0)
 {
     this->initRegion(num_features, regionName, numAvailablePolicies, callbackPool, modelYamlFile);
 }
@@ -344,10 +345,11 @@ Apollo::Region::Region(
     :
         num_features(num_features), 
         current_context(nullptr), 
-        idx(0), callback_pool(callbackPool)
+        idx(0), callback_pool(callbackPool),
+        shouldRunCounters(1)
 {
     this->initRegion(num_features, regionName, numAvailablePolicies, callbackPool, modelYamlFile);
-    this->papiPerfCnt = new PapiCounters(isMultiplexed, papi_cntr_events);
+    this->papiPerfCnt = new Apollo::PapiCounters(isMultiplexed, papi_cntr_events);
 }
 
 void Apollo::Region::apolloThreadBegin(){
@@ -421,25 +423,55 @@ Apollo::Region::collectContext(Apollo::RegionContext *context, double metric)
   // If the performance counters were setup
   if(this->papiPerfCnt){
 
-    // If performance counters are enabled, let's add them in to the region features vector
-    // First calculate the min, max, mean of each counter
-    std::vector<float> vals = this->papiPerfCnt->getSummaryStats();
+    // The counters were run, this was the first time we saw this user-supplied
+    // feature vector. Thus, we should save it to the feature-counter mapping
+    // along with not adding the measure to the region measures due to the
+    // slight execution time overhead PAPI adds. 
+    if(this->shouldRunCounters){
 
-    // Add the new features to the feature list
-    for(int i = 0; i < vals.size(); ++i){
-        context->features.push_back(vals[i]);
+        // First calculate the sum of each counter
+        // These summary statistics are calculated across threads, so we
+        // always have the same feature dimensions irregardless of thread count
+        std::vector<float> vals = this->papiPerfCnt->getSummaryStats();
+
+        // Clear the PapiCounters counter values
+        this->papiPerfCnt->clearAllCntrValues();
+
+        // Map the user-provided features to the counter values
+        this->feats_to_cntr_vals[context->features] = vals;
+
+        // Add the new features to the feature list
+        //for(int i = 0; i < vals.size(); ++i){
+            //context->features.push_back(vals[i]);
+        //}
+
+        // Store these features for use after Region->end() call finishes
+        // and the context gets deleted (so we lose our context->features vector)
+        this->lastFeats = context->features;
+
+        // We're gonna change this later, just want something working for now
+        goto dontAddMeasure;
     }
 
-    // Store these features for use after Region->end() call finishes
-    // and the context gets deleted (so we lose out context->feature vector)
-    //this->lastFeats = vals;
-    this->lastFeats = context->features;
+    // This case happens if we already got counter values for the 
+    // user-provided features (and we've run this feature config once before) 
+    else{
+        // Get the counter values for this feature set
+        std::vector<float> vals = this->feats_to_cntr_vals[context->features];
 
-    // Clear the PapiCounters counter values
-    this->papiPerfCnt->clearAllCntrValues();
+        // Set our features to the counter values
+        context->features = vals;
+
+        // continue on to add the measure
+    }
+
   }
 #endif
 
+// Hack around the goto statement, wrap this in it's own scope
+// Of course this is messy, but we will clean up later. Just want
+// to get something working for now. 
+{
   // std::cout << "COLLECT CONTEXT " << context->idx << " REGION " << name \
             << " metric " << metric << std::endl;
   auto iter = measures.find({context->features, context->policy});
@@ -468,7 +500,9 @@ Apollo::Region::collectContext(Apollo::RegionContext *context, double metric)
         trace_file << context->policy << " ";
         trace_file << metric << "\n";
     }
+}
 
+dontAddMeasure:
     apollo->region_executions++;
 
     if( Config::APOLLO_GLOBAL_TRAIN_PERIOD && ( apollo->region_executions%Config::APOLLO_GLOBAL_TRAIN_PERIOD) == 0 ) {
@@ -633,6 +667,21 @@ void
 Apollo::Region::setFeature(Apollo::RegionContext *context, float value)
 {
     context->features.push_back(value);
+
+#ifdef PERF_CNTR_MODE
+    // Check to see if we've already seen this feature set before
+    // If not, let's set the flag to run the counters 
+    // If so, we should just not run the counter code
+    // as we know the counter values already since they're policy-independent
+    this->shouldRunCounters = (this->feats_to_cntr_vals.find(context->features) == this->feats_to_cntr_vals.end());
+
+    // Let the papi counter object know whether it should allow
+    // threadBegin/End calls to run
+    if(this->papiPerfCnt){
+        this->papiPerfCnt->runWithCounters = this->shouldRunCounters;
+    }
+#endif
+
     return;
 }
 

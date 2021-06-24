@@ -3,10 +3,11 @@
 
 
 // Initialize PAPI and keep the perfcntr names we want to track
-PapiCounters::PapiCounters(int isMultiplexed, 
+Apollo::PapiCounters::PapiCounters(int isMultiplexed, 
                            std::vector<std::string> eventNames)
       :isMultiplexed(isMultiplexed),
        numEvents(eventNames.size()),
+       runWithCounters(1),
        event_names_to_track(eventNames){
 
 	//this->numEvents = eventNames.size();
@@ -64,7 +65,7 @@ PapiCounters::PapiCounters(int isMultiplexed,
     return;
 }
 
-PapiCounters::~PapiCounters(){
+Apollo::PapiCounters::~PapiCounters(){
 
     // Destroy the events_to_track
     free(this->events_to_track);
@@ -80,30 +81,34 @@ PapiCounters::~PapiCounters(){
 }
 
 
-void PapiCounters::startThread(){
+void Apollo::PapiCounters::startThread(){
 
-	//printf("In startThread()\n");
+    if(!this->runWithCounters){
+	    return;
+    }
 
-    	// Keep track of the eventset identifier for this thread
- 	int EventSet = PAPI_NULL;
- 	int retval;
+    //printf("In startThread()\n");
 
-	// Register this thread with PAPI
-	//if ( ( retval = PAPI_register_thread() ) != PAPI_OK ) {
-		//fprintf(stderr, "PAPI thread registration error!\n");
-	//}
+        // Keep track of the eventset identifier for this thread
+     int EventSet = PAPI_NULL;
+     int retval;
 
-	// Create the Event Set for this thread
-	if (PAPI_create_eventset(&EventSet) != PAPI_OK){
-		fprintf(stderr, "PAPI eventset creation error!\n");
-	}
+    // Register this thread with PAPI
+    //if ( ( retval = PAPI_register_thread() ) != PAPI_OK ) {
+	    //fprintf(stderr, "PAPI thread registration error!\n");
+    //}
 
-	// In Component PAPI, EventSets must be assigned a component index
-	// before you can fiddle with their internals. 0 is always the cpu component
-	retval = PAPI_assign_eventset_component( EventSet, 0 );
-	if ( retval != PAPI_OK ) {
-		fprintf(stderr, "PAPI assign eventset component error!\n");
-	}
+    // Create the Event Set for this thread
+    if (PAPI_create_eventset(&EventSet) != PAPI_OK){
+	    fprintf(stderr, "PAPI eventset creation error!\n");
+    }
+
+    // In Component PAPI, EventSets must be assigned a component index
+    // before you can fiddle with their internals. 0 is always the cpu component
+    retval = PAPI_assign_eventset_component( EventSet, 0 );
+    if ( retval != PAPI_OK ) {
+	    fprintf(stderr, "PAPI assign eventset component error!\n");
+    }
 
     if(this->isMultiplexed){
 	    // Convert our EventSet to a multiplexed EventSet
@@ -146,47 +151,51 @@ void PapiCounters::startThread(){
 	}
 }
 
-void PapiCounters::stopThread(){
+void Apollo::PapiCounters::stopThread(){
 
-	//printf("In stopThread()\n");
-	//printf("My map size: %d\n", this->thread_id_to_eventset.size());
-	//printf("My other map size: %d\n", this->thread_id_to_cntr_ptr.size());
+    if(!this->runWithCounters){
+	    return;
+    }
+
+    //printf("In stopThread()\n");
+    //printf("My map size: %d\n", this->thread_id_to_eventset.size());
+    //printf("My other map size: %d\n", this->thread_id_to_cntr_ptr.size());
 
     int threadId = omp_get_thread_num();
     int EventSet = this->thread_id_to_eventset[threadId];
     long long* cntr_vals = this->thread_id_to_cntr_ptr[threadId];
     int retval;
 
-	// stop counting events in the Event Set
-	// Store the resulting values into our counter values array
-	if ( ( retval = PAPI_stop( EventSet, cntr_vals ) ) != PAPI_OK){
-		fprintf(stderr, "Could NOT stop eventset counting!\n");
-	}
+    // stop counting events in the Event Set
+    // Store the resulting values into our counter values array
+    if ( ( retval = PAPI_stop( EventSet, cntr_vals ) ) != PAPI_OK){
+	    fprintf(stderr, "Could NOT stop eventset counting!\n");
+    }
 
-	// Store the pointer to that memory into our list
-    	// Lock this little scope to store the counter values 
-    	{
-        	std::lock_guard<util::spinlock> g(thread_lock);
-		this->all_cntr_values.push_back(cntr_vals);
-	}
+    // Store the pointer to that memory into our list
+        // Lock this little scope to store the counter values 
+        {
+            std::lock_guard<util::spinlock> g(thread_lock);
+	    this->all_cntr_values.push_back(cntr_vals);
+    }
 
-	// Remove all events from the eventset
-	if ( ( retval = PAPI_cleanup_eventset( EventSet ) ) != PAPI_OK ) {
-		fprintf(stderr, "PAPI could not cleanup eventset!\n");
-	}
+    // Remove all events from the eventset
+    if ( ( retval = PAPI_cleanup_eventset( EventSet ) ) != PAPI_OK ) {
+	    fprintf(stderr, "PAPI could not cleanup eventset!\n");
+    }
 
-	// Deallocate the empty eventset from memory
-	if ( ( retval = PAPI_destroy_eventset( &EventSet) ) != PAPI_OK ) {
-		fprintf(stderr, "PAPI could not destroy eventset!\n");
-	}
+    // Deallocate the empty eventset from memory
+    if ( ( retval = PAPI_destroy_eventset( &EventSet) ) != PAPI_OK ) {
+	    fprintf(stderr, "PAPI could not destroy eventset!\n");
+    }
 
-	// Shut down this thread and free the thread ID
-	//if ( ( retval = PAPI_unregister_thread(  ) ) != PAPI_OK ) {
-		//fprintf(stderr, "PAPI could not unregister thread!\n");
-	//}
+    // Shut down this thread and free the thread ID
+    //if ( ( retval = PAPI_unregister_thread(  ) ) != PAPI_OK ) {
+	    //fprintf(stderr, "PAPI could not unregister thread!\n");
+    //}
 }
 
-void PapiCounters::clearAllCntrValues(){
+void Apollo::PapiCounters::clearAllCntrValues(){
 
     // Free the counter arrays
     for(std::vector<long long*>::iterator i = std::begin(this->all_cntr_values);
@@ -204,7 +213,7 @@ void PapiCounters::clearAllCntrValues(){
 	this->all_cntr_values.clear();
 }
 
-std::vector<float> PapiCounters::getSummaryStats(){
+std::vector<float> Apollo::PapiCounters::getSummaryStats(){
 	// Calculate the min, max, mean of each perf counter
 	// return a vector of the values, where every 3 values in the array corresponds to a perf counter
 	std::vector<float> toRet;
