@@ -462,6 +462,10 @@ Apollo::Region::collectContext(Apollo::RegionContext *context, double metric)
         // Set our features to the counter values
         context->features = vals;
 
+        // Store these features for use after Region->end() call finishes
+        // and the context gets deleted (so we lose our context->features vector)
+        this->lastFeats = context->features;
+
         // continue on to add the measure
     }
 
