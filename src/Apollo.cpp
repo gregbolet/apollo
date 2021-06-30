@@ -438,6 +438,8 @@ void
 Apollo::train(int step) {
     int rank = mpiRank;  //Automatically 0 if not an MPI environment.
 
+    //std::cout << "[TRAINING] Total num regions tracked: " << regions.size() << std::endl;
+
     // Reduce local region measurements to best policies
     for( auto &it: regions ) {
         Region *reg = it.second;
