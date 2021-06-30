@@ -464,12 +464,14 @@ Apollo::Region::collectContext(Apollo::RegionContext *context, double metric)
 
         // Store these features for use after Region->end() call finishes
         // and the context gets deleted (so we lose our context->features vector)
-        this->lastFeats = context->features;
+        //this->lastFeats = context->features;
 
         // continue on to add the measure
     }
-
   }
+        // Store these features for use after Region->end() call finishes
+        // and the context gets deleted (so we lose our context->features vector)
+        this->lastFeats = context->features;
 #endif
 
 // Hack around the goto statement, wrap this in it's own scope
