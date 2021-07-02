@@ -7,7 +7,7 @@ Apollo::PapiCounters::PapiCounters(int isMultiplexed,
                            std::vector<std::string> eventNames)
       :isMultiplexed(isMultiplexed),
        numEvents(eventNames.size()),
-       runWithCounters(1),
+       //runWithCounters(1),
        event_names_to_track(eventNames){
 
 	//this->numEvents = eventNames.size();
@@ -83,9 +83,9 @@ Apollo::PapiCounters::~PapiCounters(){
 
 void Apollo::PapiCounters::startThread(){
 
-    if(!this->runWithCounters){
-	    return;
-    }
+    //if(!this->runWithCounters){
+	    //return;
+    //}
 
     //printf("In startThread()\n");
 
@@ -153,9 +153,9 @@ void Apollo::PapiCounters::startThread(){
 
 void Apollo::PapiCounters::stopThread(){
 
-    if(!this->runWithCounters){
-	    return;
-    }
+    //if(!this->runWithCounters){
+	    //return;
+    //}
 
     //printf("In stopThread()\n");
     //printf("My map size: %d\n", this->thread_id_to_eventset.size());

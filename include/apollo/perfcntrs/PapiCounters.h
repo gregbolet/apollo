@@ -32,7 +32,7 @@ class Apollo::PapiCounters : public Apollo::PerfCounter{
         friend class Apollo::Region;
         int isMultiplexed;
         int numEvents;
-        int runWithCounters;
+        //int runWithCounters;
 
         // Keep our event names in here
         std::vector<std::string> event_names_to_track;

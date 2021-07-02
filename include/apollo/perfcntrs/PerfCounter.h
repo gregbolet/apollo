@@ -17,7 +17,7 @@ class Apollo::PerfCounter {
         virtual void startThread() {};
         virtual void stopThread() {};        
         virtual void clearAllCntrValues() {};        
-        virtual std::vector<float> getSummaryStats() {};        
+        virtual std::vector<float> getSummaryStats() {return std::vector<float>();};        
 
 };
 

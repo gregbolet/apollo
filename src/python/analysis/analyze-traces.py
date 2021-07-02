@@ -202,9 +202,15 @@ def main():
             .drop_duplicates(['region', 'idx'], keep='first')\
             .set_index(['region', 'idx'])\
             .sort_index()
+
         t2 = time.perf_counter()
         #print('=========== OPT =============\n', opt.to_string(), '\n=============================',
         #        file=open('opt.txt','w'))
+        #print(len(opt.index))
+        #print(len(data_map['Static'].index)/args.nstatic)
+        #print(len(data_map['Static'].index), args.nstatic)
+        #print(opt.shape[0])
+        #print(data_map['Static'].shape[0])
         assert len(opt.index) == len(data_map['Static'].index)/args.nstatic, 'Data error'
 
         print('=== Writing out optimal policy selection...')
