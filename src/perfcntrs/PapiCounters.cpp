@@ -75,7 +75,8 @@ Apollo::PapiCounters::~PapiCounters(){
 
 	this->clearAllCntrValues();
 
-	PAPI_shutdown();
+    // Let's avoid PAPI_shutdown for now
+    //PAPI_shutdown();
 
     return;
 }
@@ -99,15 +100,16 @@ void Apollo::PapiCounters::startThread(){
     //}
 
     // Create the Event Set for this thread
-    if (PAPI_create_eventset(&EventSet) != PAPI_OK){
-	    fprintf(stderr, "PAPI eventset creation error!\n");
+    retval = PAPI_create_eventset(&EventSet);
+    if (retval != PAPI_OK){
+	    fprintf(stderr, "PAPI eventset creation error! [%d]\n", retval);
     }
 
     // In Component PAPI, EventSets must be assigned a component index
     // before you can fiddle with their internals. 0 is always the cpu component
     retval = PAPI_assign_eventset_component( EventSet, 0 );
     if ( retval != PAPI_OK ) {
-	    fprintf(stderr, "PAPI assign eventset component error!\n");
+	    fprintf(stderr, "PAPI assign eventset component error! [%d]\n", retval);
     }
 
     if(this->isMultiplexed){
@@ -123,7 +125,7 @@ void Apollo::PapiCounters::startThread(){
     // Add events to the eventset
     retval = PAPI_add_events(EventSet, this->events_to_track, this->numEvents);
     if(retval != PAPI_OK){
-        fprintf(stderr, "PAPI add events failed!\n");
+        fprintf(stderr, "PAPI add events failed! [%d]\n", retval);
     }
 
     // Map this threadId to the eventset

@@ -454,7 +454,11 @@ Apollo::Region::collectContext(Apollo::RegionContext *context, double metric)
         // If they were not actually called, this region doesn't have
         // start/stopApolloThread calls, so let's drop the papiPerfCnt
         // object. Otherwise, continue as normal with adding the counters.
-        
+        if(this->papiPerfCnt->all_cntr_values.size() == 0){
+            delete this->papiPerfCnt;
+            this->papiPerfCnt = nullptr;
+            goto skipCounterAdding;
+        }
 
         // First calculate the sum of each counter
         // These summary statistics are calculated across threads, so we
