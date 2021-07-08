@@ -61,6 +61,20 @@ static inline bool fileExists(std::string path) {
 
 void Apollo::Region::train(int step)
 {
+
+//#ifdef PERF_CNTR_MODE
+  //// If we ran the performance counters, don't add the data to training
+  //if(this->shouldRunCounters) {
+      //std::cout << "skipping training!" << std::endl;
+      //std::cout.flush();
+      //return;
+  //}
+  //else{
+      //std::cout << "DOING training!" << std::endl;
+      //std::cout.flush();
+  //}
+//#endif
+
   if (!model->training) return;
 
   collectPendingContexts();
@@ -419,13 +433,24 @@ Apollo::Region::begin(std::vector<float> features)
     context->features = features;
 
 #ifdef PERF_CNTR_MODE
+    this->lastFeats = context->features;
+
     // Check to see if we've already seen this feature set before
     // If not, let's set the flag to run the counters 
     // If so, we should just not run the counter code
     // as we know the counter values already since they're policy-independent
     if(this->papiPerfCnt){
         this->shouldRunCounters = (this->feats_to_cntr_vals.find(context->features) == this->feats_to_cntr_vals.end());
+
+        // If we already have run the counters, then translate the passed-in
+        // feature vector so we can properly getPolicyIndex() if a tree has
+        // already been trained
+        if(!this->shouldRunCounters){
+            context->features = this->feats_to_cntr_vals[context->features];
+            this->lastFeats = context->features;
+        }
     }
+
 
     // Let the papi counter object know whether it should allow
     // threadBegin/End calls to run
@@ -455,9 +480,9 @@ Apollo::Region::collectContext(Apollo::RegionContext *context, double metric)
         // start/stopApolloThread calls, so let's drop the papiPerfCnt
         // object. Otherwise, continue as normal with adding the counters.
         if(this->papiPerfCnt->all_cntr_values.size() == 0){
-            delete this->papiPerfCnt;
-            this->papiPerfCnt = nullptr;
-            goto skipCounterAdding;
+            //delete this->papiPerfCnt;
+            //this->papiPerfCnt = nullptr;
+            //goto skipCounterAdding;
         }
 
         // First calculate the sum of each counter
@@ -488,10 +513,10 @@ Apollo::Region::collectContext(Apollo::RegionContext *context, double metric)
     // user-provided features (and we've run this feature config once before) 
     else{
         // Get the counter values for this feature set
-        std::vector<float> vals = this->feats_to_cntr_vals[context->features];
+        //std::vector<float> vals = this->feats_to_cntr_vals[context->features];
 
         // Set our features to the counter values
-        context->features = vals;
+        //context->features = vals;
 
         // Store these features for use after Region->end() call finishes
         // and the context gets deleted (so we lose our context->features vector)
@@ -500,12 +525,13 @@ Apollo::Region::collectContext(Apollo::RegionContext *context, double metric)
         // continue on to add the measure
     }
   }
+
+skipCounterAdding:
         // Store these features for use after Region->end() call finishes
         // and the context gets deleted (so we lose our context->features vector)
         this->lastFeats = context->features;
 #endif
 
-skipCounterAdding:
 // Hack around the goto statement, wrap this in it's own scope
 // Of course this is messy, but we will clean up later. Just want
 // to get something working for now. 

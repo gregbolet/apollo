@@ -444,6 +444,18 @@ Apollo::train(int step) {
     for( auto &it: regions ) {
         Region *reg = it.second;
         reg->collectPendingContexts();
+
+#ifdef PERF_CNTR_MODE
+        if(reg->shouldRunCounters) {
+            //std::cout << "skipping training! 1" < std::endl;
+            //printf("%s skipped training 1\n", reg->name);
+            continue;
+        }
+        else{
+            //printf("%s DOING training 1 with %d features\n", reg->name, (int) reg->lastFeats.size());
+        }
+#endif
+
         reg->reduceBestPolicies(step);
         reg->measures.clear();
     }
@@ -503,6 +515,19 @@ Apollo::train(int step) {
     for( auto &it : regions ) {
         Region *reg = it.second;
 
+#ifdef PERF_CNTR_MODE
+        if(reg->shouldRunCounters) {
+            //printf("%s skipped training 2\n", reg->name);
+            //std::cout << "skipping training! 2" < std::endl;
+            continue;
+        }
+        else{
+            //printf("%s DOING training 2 with %d features\n", reg->name, (int) reg->lastFeats.size());
+        }
+#endif
+        // std::cout << "is training: " << reg->model->training << \
+        "\t" << "best policies size: " << reg->best_policies.size() << std::endl;
+
         if( reg->model->training && reg->best_policies.size() > 0 ) {
             if( Config::APOLLO_REGION_MODEL ) {
                 //std::cout << "TRAIN MODEL PER REGION" << std::endl;
@@ -560,10 +585,12 @@ Apollo::train(int step) {
             if( Config::APOLLO_STORE_MODELS ) {
                 reg->model->store( "dtree-step-" + std::to_string( step ) \
                         + "-rank-" + std::to_string( rank ) \
-                        + "-" + reg->name + ".yaml" );
+                        + "-init-" + Config::APOLLO_INIT_MODEL \
+                        + "-region-" + reg->name + ".yaml" );
                 reg->model->store( "dtree-latest" \
                         "-rank-" + std::to_string( rank ) \
-                        + "-" + reg->name + ".yaml" );
+                        + "-init-" + Config::APOLLO_INIT_MODEL \
+                        + "-region-" + reg->name + ".yaml" );
 
                 if (Config::APOLLO_RETRAIN_ENABLE) {
                   reg->time_model->store(
