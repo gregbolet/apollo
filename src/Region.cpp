@@ -157,7 +157,13 @@ void Apollo::Region::train(int step)
 int
 Apollo::Region::getPolicyIndex(Apollo::RegionContext *context)
 {
+
+#ifdef PERF_CNTR_MODE
+    // If we're measuring perf cntrs, use the default policy
+    int choice = (this->shouldRunCounters) ? 0 : model->getIndex(context->features);
+#else
     int choice = model->getIndex( context->features );
+#endif
 
     if( Config::APOLLO_TRACE_POLICY ) {
         std::stringstream trace_out;
@@ -566,7 +572,9 @@ skipCounterAdding:
     }
 }
 
+#ifdef PERF_CNTR_MODE
 dontAddMeasure:
+#endif
     apollo->region_executions++;
 
     if( Config::APOLLO_GLOBAL_TRAIN_PERIOD && ( apollo->region_executions%Config::APOLLO_GLOBAL_TRAIN_PERIOD) == 0 ) {
