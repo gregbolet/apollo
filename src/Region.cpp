@@ -387,7 +387,10 @@ void Apollo::Region::apolloThreadEnd(){
 int Apollo::Region::queryPolicyModel(std::vector<float> feats){
     return this->model->getIndex(feats);
 }
-
+#else
+// If counters don't get enabled, just return immediately
+void Apollo::Region::apolloThreadBegin(){ return; }
+void Apollo::Region::apolloThreadEnd(){ return; }
 #endif
 
 Apollo::Region::~Region()
@@ -456,13 +459,6 @@ Apollo::Region::begin(std::vector<float> features)
             this->lastFeats = context->features;
         }
     }
-
-
-    // Let the papi counter object know whether it should allow
-    // threadBegin/End calls to run
-    //if(this->papiPerfCnt){
-        //this->papiPerfCnt->runWithCounters = this->shouldRunCounters;
-    //}
 #endif
 
     return context;
@@ -572,10 +568,12 @@ skipCounterAdding:
     }
 }
 
+    // Try only counting a region execution as having been a measurement
+    apollo->region_executions++;
+
 #ifdef PERF_CNTR_MODE
 dontAddMeasure:
 #endif
-    apollo->region_executions++;
 
     if( Config::APOLLO_GLOBAL_TRAIN_PERIOD && ( apollo->region_executions%Config::APOLLO_GLOBAL_TRAIN_PERIOD) == 0 ) {
         //std::cout << "FLUSH PERIOD! region_executions " << apollo->region_executions<< std::endl; //ggout
