@@ -442,6 +442,8 @@ Apollo::Region::begin(std::vector<float> features)
     context->features = features;
 
 #ifdef PERF_CNTR_MODE
+    //std::cout << "USING THREAD COUNT: " << omp_get_max_threads() << std::endl;
+
     this->lastFeats = context->features;
 
     // Check to see if we've already seen this feature set before
