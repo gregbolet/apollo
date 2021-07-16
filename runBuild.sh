@@ -2,9 +2,11 @@
 
 export CC=$(which clang)
 export CXX=$(which clang++)
+export MPI_C=$(which mpicc)
+export MPI_CXX=$(which mpicxx)
 
 cd ./build
-cmake   -DENABLE_MPI=OFF \
+cmake   -DENABLE_MPI=ON \
  	-DCMAKE_BUILD_TYPE=Release \
 	-DOpenCV_DIR=~/workspace/opencv/build \
 	-DENABLE_PERF_CNTRS=ON \
