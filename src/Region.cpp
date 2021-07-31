@@ -438,30 +438,31 @@ Apollo::Region::begin()
 Apollo::RegionContext *
 Apollo::Region::begin(std::vector<float> features)
 {
-    Apollo::RegionContext *context = begin();
-    context->features = features;
-
 #ifdef PERF_CNTR_MODE
     //std::cout << "USING THREAD COUNT: " << omp_get_max_threads() << std::endl;
 
-    this->lastFeats = context->features;
+    //this->lastFeats = context->features;
 
     // Check to see if we've already seen this feature set before
     // If not, let's set the flag to run the counters 
     // If so, we should just not run the counter code
     // as we know the counter values already since they're policy-independent
     if(this->papiPerfCnt){
-        this->shouldRunCounters = (this->feats_to_cntr_vals.find(context->features) == this->feats_to_cntr_vals.end());
+        this->shouldRunCounters = (this->feats_to_cntr_vals.find(features) == this->feats_to_cntr_vals.end());
+        //this->shouldRunCounters = !(this->feats_to_cntr_vals.contains(context->features));
 
         // If we already have run the counters, then translate the passed-in
         // feature vector so we can properly getPolicyIndex() if a tree has
         // already been trained
         if(!this->shouldRunCounters){
-            context->features = this->feats_to_cntr_vals[context->features];
-            this->lastFeats = context->features;
+            features = this->feats_to_cntr_vals[features];
+            //this->lastFeats = context->features;
         }
     }
 #endif
+
+    Apollo::RegionContext *context = begin();
+    context->features = features;
 
     return context;
 }
@@ -473,21 +474,12 @@ Apollo::Region::collectContext(Apollo::RegionContext *context, double metric)
   // If the performance counters were setup
   if(this->papiPerfCnt){
 
+
     // The counters were run, this was the first time we saw this user-supplied
     // feature vector. Thus, we should save it to the feature-counter mapping
     // along with not adding the measure to the region measures due to the
     // slight execution time overhead PAPI adds. 
     if(this->shouldRunCounters){
-
-        // Check whether or not the counters were actually called!
-        // If they were not actually called, this region doesn't have
-        // start/stopApolloThread calls, so let's drop the papiPerfCnt
-        // object. Otherwise, continue as normal with adding the counters.
-        if(this->papiPerfCnt->all_cntr_values.size() == 0){
-            //delete this->papiPerfCnt;
-            //this->papiPerfCnt = nullptr;
-            //goto skipCounterAdding;
-        }
 
         // First calculate the sum of each counter
         // These summary statistics are calculated across threads, so we
@@ -500,14 +492,9 @@ Apollo::Region::collectContext(Apollo::RegionContext *context, double metric)
         // Map the user-provided features to the counter values
         this->feats_to_cntr_vals[context->features] = vals;
 
-        // Add the new features to the feature list
-        //for(int i = 0; i < vals.size(); ++i){
-            //context->features.push_back(vals[i]);
-        //}
-
         // Store these features for use after Region->end() call finishes
         // and the context gets deleted (so we lose our context->features vector)
-        this->lastFeats = context->features;
+        //this->lastFeats = context->features;
 
         // We're gonna change this later, just want something working for now
         goto dontAddMeasure;
@@ -533,7 +520,7 @@ Apollo::Region::collectContext(Apollo::RegionContext *context, double metric)
 skipCounterAdding:
         // Store these features for use after Region->end() call finishes
         // and the context gets deleted (so we lose our context->features vector)
-        this->lastFeats = context->features;
+        //this->lastFeats = context->features;
 #endif
 
 // Hack around the goto statement, wrap this in it's own scope

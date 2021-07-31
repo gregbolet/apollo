@@ -151,13 +151,11 @@ void Apollo::PapiCounters::startThread(){
 	if (PAPI_start(EventSet) != PAPI_OK){
 		fprintf(stderr, "Could NOT start eventset counting!\n");
 	}
+
+    //fprintf(stderr, "STARTED THREAD COUNTING!\n");
 }
 
 void Apollo::PapiCounters::stopThread(){
-
-    //if(!this->runWithCounters){
-	    //return;
-    //}
 
     //printf("In stopThread()\n");
     //printf("My map size: %d\n", this->thread_id_to_eventset.size());

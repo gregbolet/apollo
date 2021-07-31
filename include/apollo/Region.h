@@ -6,6 +6,8 @@
 #include <chrono>
 #include <memory>
 #include <map>
+#include <unordered_map>
+#include <functional>
 #include <fstream>
 
 #include "apollo/Apollo.h"
@@ -91,7 +93,17 @@ class Apollo::Region {
                 const std::string &modelYamlFile="");
 
         Apollo::PapiCounters* papiPerfCnt;
-        std::vector<float> lastFeats;
+        //std::vector<float> lastFeats;
+        struct VectorHasher {
+            int operator()(const std::vector<float> &V) const {
+                static std::hash<float> hasher;
+                return hasher(V[0]);
+            }
+        };
+        //std::unordered_map<
+            //std::vector<float>, 
+            //std::vector<float>, VectorHasher
+            //> feats_to_cntr_vals;
         std::map<
             std::vector<float>, 
             std::vector<float>

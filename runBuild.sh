@@ -1,12 +1,12 @@
 #!/bin/bash
 
-#module load clang/12.0.0
-#export CC=$(which clang)
-#export CXX=$(which clang++)
+module load clang/12.0.0
+export CC=$(which clang)
+export CXX=$(which clang++)
 
-module load gcc/10.2.1
-export CC=$(which gcc)
-export CXX=$(which g++)
+#module load gcc/10.2.1
+#export CC=$(which gcc)
+#export CXX=$(which g++)
 
 cd ./build
 cmake   -DENABLE_MPI=OFF \
