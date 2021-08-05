@@ -353,7 +353,7 @@ Apollo::Region::Region(
 #ifdef PERF_CNTR_MODE
     if(Config::APOLLO_ENABLE_PERF_CNTRS){
         this->shouldRunCounters = 1;
-        this->num_features = Config::APOLLO_PERF_CNTRS.size();
+        this->num_features = (int) Config::APOLLO_PERF_CNTRS.size();
         this->papiPerfCnt = new Apollo::PapiCounters(Config::APOLLO_PERF_CNTRS_MLTPX, Config::APOLLO_PERF_CNTRS);
     }
     else{

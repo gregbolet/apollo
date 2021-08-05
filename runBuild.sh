@@ -10,7 +10,7 @@ export CXX=$(which clang++)
 
 cd ./build
 cmake   -DENABLE_MPI=OFF \
- 	-DCMAKE_BUILD_TYPE=Release \
+ 	-DCMAKE_BUILD_TYPE=Release\
         -DCMAKE_INSTALL_PREFIX=./install \
 	-DOpenCV_DIR=~/workspace/opencv/build \
 	-DENABLE_PERF_CNTRS=ON \
