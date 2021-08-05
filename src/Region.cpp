@@ -346,32 +346,24 @@ Apollo::Region::Region(
     :
         num_features(num_features), 
         current_context(nullptr), 
-        idx(0), callback_pool(callbackPool),
-        papiPerfCnt(nullptr),
-        shouldRunCounters(0)
+        idx(0), callback_pool(callbackPool)
 {
     this->initRegion(num_features, regionName, numAvailablePolicies, callbackPool, modelYamlFile);
+
+#ifdef PERF_CNTR_MODE
+    if(Config::APOLLO_ENABLE_PERF_CNTRS){
+        this->shouldRunCounters = 1;
+        this->num_features = Config::APOLLO_PERF_CNTRS.size();
+        this->papiPerfCnt = new Apollo::PapiCounters(Config::APOLLO_PERF_CNTRS_MLTPX, Config::APOLLO_PERF_CNTRS);
+    }
+    else{
+        this->shouldRunCounters = 0;
+        this->papiPerfCnt = nullptr;
+    }
+#endif
 }
 
 #ifdef PERF_CNTR_MODE
-Apollo::Region::Region(
-        const int num_features,
-        const char  *regionName,
-        int          numAvailablePolicies,
-        std::vector<std::string> papi_cntr_events,
-        int isMultiplexed,
-        Apollo::CallbackDataPool *callbackPool,
-        const std::string &modelYamlFile)
-    :
-        num_features(num_features), 
-        current_context(nullptr), 
-        idx(0), callback_pool(callbackPool),
-        shouldRunCounters(1)
-{
-    this->initRegion(num_features, regionName, numAvailablePolicies, callbackPool, modelYamlFile);
-    this->papiPerfCnt = new Apollo::PapiCounters(isMultiplexed, papi_cntr_events);
-}
-
 void Apollo::Region::apolloThreadBegin(){
     if(this->papiPerfCnt && this->shouldRunCounters){
         this->papiPerfCnt->startThread();

@@ -29,15 +29,6 @@ class Apollo::Region {
                 Apollo::CallbackDataPool *callbackPool = nullptr,
                 const std::string &modelYamlFile="");
 
-        Region(
-                const int    num_features,
-                const char   *regionName,
-                int           numAvailablePolicies,
-                std::vector<std::string> papi_cntr_events,
-                int isMultiplexed,
-                Apollo::CallbackDataPool *callbackPool = nullptr,
-                const std::string &modelYamlFile="");
-
         ~Region();
 
         typedef struct Measure {
