@@ -140,6 +140,21 @@ Apollo::getCallpathOffset(int walk_distance)
   return region_id;
 }
 
+#ifdef PERF_CNTR_MODE
+    std::vector<std::string> getCountersFromString(std::string envVarInput){
+        std::vector<std::string> cntrList;
+        std::stringstream s_stream(envVarInput);
+
+        while(s_stream.good()){
+            std::string substr;
+            getline(s_stream, substr, ','); //get first string delimited by comma
+            cntrList.push_back(substr);
+        }
+
+        return cntrList;
+    }
+#endif
+
 Apollo::Apollo()
 {
     region_executions = 0;
@@ -164,6 +179,14 @@ Apollo::Apollo()
     Config::APOLLO_RETRAIN_REGION_THRESHOLD = std::stof( apolloUtils::safeGetEnv( "APOLLO_RETRAIN_REGION_THRESHOLD", "0.5" ) );
     Config::APOLLO_TRACE_CSV = std::stoi( apolloUtils::safeGetEnv( "APOLLO_TRACE_CSV", "0" ) );
     Config::APOLLO_TRACE_CSV_FOLDER_SUFFIX = apolloUtils::safeGetEnv( "APOLLO_TRACE_CSV_FOLDER_SUFFIX", "" );
+
+#ifdef PERF_CNTR_MODE
+    Config::APOLLO_ENABLE_PERF_CNTRS = std::stoi( apolloUtils::safeGetEnv( "APOLLO_ENABLE_PERF_CNTRS", "0" ) );
+    Config::APOLLO_PERF_CNTRS_MLTPX = std::stoi( apolloUtils::safeGetEnv( "APOLLO_PERF_CNTRS_MLTPX", "1" ) );
+
+    std::string PERF_CNTRS = apolloUtils::safeGetEnv( "APOLLO_PERF_CNTRS", "PAPI_DP_OPS,PAPI_SP_OPS" );
+    Config::APOLLO_PERF_CNTRS = getCountersFromString(PERF_CNTRS);
+#endif
 
     //std::cout << "init model " << Config::APOLLO_INIT_MODEL << std::endl;
     //std::cout << "collective " << Config::APOLLO_COLLECTIVE_TRAINING << std::endl;
