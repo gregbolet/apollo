@@ -348,18 +348,20 @@ Apollo::Region::Region(
         current_context(nullptr), 
         idx(0), callback_pool(callbackPool)
 {
-    this->initRegion(num_features, regionName, numAvailablePolicies, callbackPool, modelYamlFile);
-
 #ifdef PERF_CNTR_MODE
     if(Config::APOLLO_ENABLE_PERF_CNTRS){
-        this->shouldRunCounters = 1;
         this->num_features = (int) Config::APOLLO_PERF_CNTRS.size();
+        this->initRegion(this->num_features, regionName, numAvailablePolicies, callbackPool, modelYamlFile);
+        this->shouldRunCounters = 1;
         this->papiPerfCnt = new Apollo::PapiCounters(Config::APOLLO_PERF_CNTRS_MLTPX, Config::APOLLO_PERF_CNTRS);
     }
     else{
+        this->initRegion(num_features, regionName, numAvailablePolicies, callbackPool, modelYamlFile);
         this->shouldRunCounters = 0;
         this->papiPerfCnt = nullptr;
     }
+#else
+    this->initRegion(num_features, regionName, numAvailablePolicies, callbackPool, modelYamlFile);
 #endif
 }
 
