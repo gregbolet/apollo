@@ -186,6 +186,11 @@ Apollo::Apollo()
 
     std::string PERF_CNTRS = apolloUtils::safeGetEnv( "APOLLO_PERF_CNTRS", "PAPI_DP_OPS,PAPI_SP_OPS" );
     Config::APOLLO_PERF_CNTRS = getCountersFromString(PERF_CNTRS);
+
+    //std::cout << "Counters Used: " << std::endl;
+    //for(const auto& value: Config::APOLLO_PERF_CNTRS) {
+        //std::cout << "(" << value << ")" << std::endl;
+    //}
 #endif
 
     //std::cout << "init model " << Config::APOLLO_INIT_MODEL << std::endl;

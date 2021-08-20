@@ -523,6 +523,7 @@ skipCounterAdding:
 {
   // std::cout << "COLLECT CONTEXT " << context->idx << " REGION " << name \
             << " metric " << metric << std::endl;
+    // If we've seen this feature and policy before, add them to the average exec. time
   auto iter = measures.find({context->features, context->policy});
   // If we didn't find a feature/policy pair, add it in
   if (iter == measures.end()) {
