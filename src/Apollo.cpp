@@ -706,7 +706,7 @@ Apollo::train(int step) {
 }
 
 extern "C" {
- void *__apollo_region_create(int num_features, char *id, int num_policies) {
+ void *__apollo_region_create(int num_features, char *id, int num_policies) noexcept{
      static Apollo *apollo = Apollo::instance();
      //std::string callpathOffset = apollo->getCallpathOffset(3);
      std::cout << "CREATE region " << id << " num_features " << num_features
@@ -714,22 +714,22 @@ extern "C" {
      return new Apollo::Region(num_features, id, num_policies);
  }
 
- void __apollo_region_begin(Apollo::Region *r) {
+ void __apollo_region_begin(Apollo::Region *r) noexcept{
      //std::cout << "BEGIN region " << r->name << std::endl;
      r->begin();
  }
 
- void __apollo_region_end(Apollo::Region *r) {
+ void __apollo_region_end(Apollo::Region *r) noexcept{
      //std::cout << "END region " << r->name << std::endl;
      r->end();
  }
 
- void __apollo_region_set_feature(Apollo::Region *r, float feature) {
+ void __apollo_region_set_feature(Apollo::Region *r, float feature) noexcept{
      //std::cout << "SET FEATURE " << feature << " region " << r->name << std::endl;
      r->setFeature(feature);
  }
 
- int __apollo_region_get_policy(Apollo::Region *r) {
+ int __apollo_region_get_policy(Apollo::Region *r) noexcept{
      int policy = r->getPolicyIndex();
      //std::cout << "GET POLICY " << policy << " region " << r->name << std::endl;
      return policy;

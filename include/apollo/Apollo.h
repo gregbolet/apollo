@@ -71,11 +71,11 @@ class Apollo
 }; //end: Apollo
 
 extern "C" {
- void *__apollo_region_create(int num_features, char *id, int num_policies);
- void __apollo_region_begin(Apollo::Region *r);
- void __apollo_region_end(Apollo::Region *r);
- void __apollo_region_set_feature(Apollo::Region *r, float feature);
- int __apollo_region_get_policy(Apollo::Region *r);
+ void *__apollo_region_create(int num_features, char *id, int num_policies) noexcept;
+ void __apollo_region_begin(Apollo::Region *r) noexcept;
+ void __apollo_region_end(Apollo::Region *r) noexcept;
+ void __apollo_region_set_feature(Apollo::Region *r, float feature) noexcept;
+ int __apollo_region_get_policy(Apollo::Region *r) noexcept;
 }
 
 #endif
