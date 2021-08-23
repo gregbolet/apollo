@@ -722,6 +722,29 @@ Apollo::Region::setFeature(Apollo::RegionContext *context, float value)
 {
     context->features.push_back(value);
 
+#ifdef PERF_CNTR_MODE
+    // Check to see if we've already seen this feature set before
+    // If not, let's set the flag to run the counters 
+    // If so, we should just not run the counter code
+    // as we know the counter values already since they're policy-independent
+    if(this->papiPerfCnt){
+        this->shouldRunCounters = (this->feats_to_cntr_vals.find(context->features) == this->feats_to_cntr_vals.end());
+
+        // If we already have run the counters, then translate the passed-in
+        // feature vector so we can properly getPolicyIndex() if a tree has
+        // already been trained
+        if(!this->shouldRunCounters){
+            context->features = this->feats_to_cntr_vals[context->features];
+        }
+    }
+
+    // Restart the clock timing to avoid extra time due to the above code
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    context->exec_time_begin = ts.tv_sec + ts.tv_nsec/1e9;
+    context->isDoneCallback = nullptr;
+    context->callback_arg = nullptr;
+#endif
 
     return;
 }
