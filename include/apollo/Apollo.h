@@ -76,6 +76,8 @@ extern "C" {
  void __apollo_region_end(Apollo::Region *r) noexcept;
  void __apollo_region_set_feature(Apollo::Region *r, float feature) noexcept;
  int __apollo_region_get_policy(Apollo::Region *r) noexcept;
+ void __apollo_region_thread_begin(Apollo::Region *r) noexcept;
+ void __apollo_region_thread_end(Apollo::Region *r) noexcept;
 }
 
 #endif

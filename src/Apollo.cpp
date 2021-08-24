@@ -734,4 +734,14 @@ extern "C" {
      //std::cout << "GET POLICY " << policy << " region " << r->name << std::endl;
      return policy;
  }
+
+#ifdef PERF_CNTR_MODE
+ void __apollo_region_thread_begin(Apollo::Region *r) noexcept{
+     r->apolloThreadBegin();
+ }
+
+ void __apollo_region_thread_end(Apollo::Region *r) noexcept{
+     r->apolloThreadEnd();
+ }
+#endif
 }
