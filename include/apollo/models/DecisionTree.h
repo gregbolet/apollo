@@ -24,8 +24,8 @@ class DecisionTree : public PolicyModel {
         void load(const std::string &filename);
 
     private:
-        //Ptr<DTrees> dtree;
-        Ptr<RTrees> dtree;
+        Ptr<DTrees> dtree;
+        //Ptr<RTrees> dtree;
         //Ptr<SVM> dtree;
         //Ptr<NormalBayesClassifier> dtree;
         //Ptr<KNearest> dtree;

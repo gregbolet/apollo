@@ -180,6 +180,8 @@ Apollo::Apollo()
     Config::APOLLO_TRACE_CSV = std::stoi( apolloUtils::safeGetEnv( "APOLLO_TRACE_CSV", "0" ) );
     Config::APOLLO_TRACE_CSV_FOLDER_SUFFIX = apolloUtils::safeGetEnv( "APOLLO_TRACE_CSV_FOLDER_SUFFIX", "" );
 
+    Config::APOLLO_DTREE_DEPTH = std::stoi( apolloUtils::safeGetEnv( "APOLLO_DTREE_DEPTH", "2" ) );
+
 #ifdef PERF_CNTR_MODE
     Config::APOLLO_ENABLE_PERF_CNTRS = std::stoi( apolloUtils::safeGetEnv( "APOLLO_ENABLE_PERF_CNTRS", "0" ) );
     Config::APOLLO_PERF_CNTRS_MLTPX = std::stoi( apolloUtils::safeGetEnv( "APOLLO_PERF_CNTRS_MLTPX", "1" ) );
@@ -613,12 +615,12 @@ Apollo::train(int step) {
             if( Config::APOLLO_STORE_MODELS ) {
                 reg->model->store( "dtree-step-" + std::to_string( step ) \
                         + "-rank-" + std::to_string( rank ) \
-                        + "-init-" + Config::APOLLO_INIT_MODEL \
-                        + "-region-" + reg->name + ".yaml" );
+                        /*+ "-init-" + Config::APOLLO_INIT_MODEL + "-region" \ */
+                        + "-" + reg->name + ".yaml" );
                 reg->model->store( "dtree-latest" \
                         "-rank-" + std::to_string( rank ) \
-                        + "-init-" + Config::APOLLO_INIT_MODEL \
-                        + "-region-" + reg->name + ".yaml" );
+                        /*+ "-init-" + Config::APOLLO_INIT_MODEL + "-region" \ */
+                        + "-" + reg->name + ".yaml" );
 
                 if (Config::APOLLO_RETRAIN_ENABLE) {
                   reg->time_model->store(
@@ -737,11 +739,15 @@ extern "C" {
 
 #ifdef PERF_CNTR_MODE
  void __apollo_region_thread_begin(Apollo::Region *r) noexcept{
+     //std::cout << "Starting Apollo Thread!" << std::endl;
      r->apolloThreadBegin();
+     //std::cout << "Started Apollo Thread!" << std::endl;
  }
 
  void __apollo_region_thread_end(Apollo::Region *r) noexcept{
+     //std::cout << "Stoping Apollo Thread!" << std::endl;
      r->apolloThreadEnd();
+     //std::cout << "Stopped Apollo Thread!" << std::endl;
  }
 #endif
 }

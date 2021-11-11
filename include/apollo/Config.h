@@ -26,6 +26,8 @@ class Config {
         static std::string APOLLO_INIT_MODEL;
         static std::string APOLLO_TRACE_CSV_FOLDER_SUFFIX;
 
+        static int APOLLO_DTREE_DEPTH;
+
         static int APOLLO_ENABLE_PERF_CNTRS;
         static int APOLLO_PERF_CNTRS_MLTPX;
         static std::vector<std::string> APOLLO_PERF_CNTRS;

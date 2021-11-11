@@ -45,6 +45,8 @@
 #include "apollo/models/DecisionTree.h"
 #include <opencv2/core/types.hpp>
 
+#include "apollo/Config.h"
+
 #define modelName "decisiontree"
 #define modelFile __FILE__
 
@@ -68,7 +70,8 @@ DecisionTree::DecisionTree(int num_policies, std::string path)
         // The file at least exists... attempt to load a model from it!
         std::cout << "== APOLLO: Loading the requested DecisionTree:\n" \
                   << "== APOLLO:     " << path << "\n";
-        dtree = RTrees::load(path.c_str());
+        //dtree = RTrees::load(path.c_str());
+        dtree = DTrees::load(path.c_str());
     }
     return;
 }
@@ -97,12 +100,14 @@ DecisionTree::DecisionTree(int num_policies, std::vector< std::vector<float> > &
     //dtree->setTrainMethod(LogisticRegression::BATCH);
     //dtree->setMiniBatchSize(1);
 
-    //dtree = DTrees::create();
-    dtree = RTrees::create();
-    dtree->setTermCriteria( TermCriteria(  TermCriteria::MAX_ITER + TermCriteria::EPS, 10, 0.01 ) );
+    dtree = DTrees::create();
+    //dtree = RTrees::create();
+    //dtree->setTermCriteria( TermCriteria(  TermCriteria::MAX_ITER + TermCriteria::EPS, 10, 0.01 ) );
     //dtree->setTermCriteria( TermCriteria(  TermCriteria::MAX_ITER, 10, 0 ) );
 
-    dtree->setMaxDepth(2);
+    dtree->setMaxDepth(Config::APOLLO_DTREE_DEPTH);
+    //dtree->setMaxDepth(2);
+    //dtree->setMaxDepth(4);
 
     dtree->setMinSampleCount(1);
     dtree->setRegressionAccuracy(0);

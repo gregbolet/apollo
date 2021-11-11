@@ -243,7 +243,7 @@ void Apollo::Region::initRegion(
             if (pos == std::string::npos)
             {
                 // Load per region model using the region name for the model file.
-                model_file = "dtree-latest-rank-" + std::to_string(apollo->mpiRank) + "-" + std::string(name) + ".yaml";
+                model_file = "dtree-latest-rank-" + std::to_string(apollo->mpiRank) + "-"+ std::string(name) + ".yaml";
             }
             else
             {
@@ -257,6 +257,7 @@ void Apollo::Region::initRegion(
             else {
                 // Fallback to default model.
                 std::cout << "WARNING: could not load file " << model_file
+                          << ",ERRNO: " << errno 
                           << ", falling back to default Static, 0" << std::endl;
                 model = ModelFactory::createStatic(apollo->num_policies, 0);
             }
@@ -552,12 +553,14 @@ skipCounterAdding:
     }
 }
 
-    // Try only counting a region execution as having been a measurement
-    apollo->region_executions++;
 
 #ifdef PERF_CNTR_MODE
 dontAddMeasure:
 #endif
+
+    // We still consider sampling performance counters as a region execution
+    // even though we don't use the timing data from it
+    apollo->region_executions++;
 
     if( Config::APOLLO_GLOBAL_TRAIN_PERIOD && ( apollo->region_executions%Config::APOLLO_GLOBAL_TRAIN_PERIOD) == 0 ) {
         //std::cout << "FLUSH PERIOD! region_executions " << apollo->region_executions<< std::endl; //ggout
