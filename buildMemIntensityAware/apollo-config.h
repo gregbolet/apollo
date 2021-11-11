@@ -41,12 +41,12 @@
 #define APOLLO_MINOR_VERSION 0
 #define APOLLO_PATCH_VERSION 0
 #define APOLLO_VERSION         "2.0.0"
-#define APOLLO_GIT_SHA1        "3e378cbca3d1dc759c3bdd4496a58fdd02d76a18"
+#define APOLLO_GIT_SHA1        "65e374448649e14fa0bc79f20e0be68523039559"
 
 #define APOLLO_BUILD_TYPE      "Release"
 
-#define APOLLO_HOST_NODE_NAME  "quartz1916"
-#define APOLLO_HOST_KNOWN_AS   "quartz1916"
+#define APOLLO_HOST_NODE_NAME  "quartz764"
+#define APOLLO_HOST_KNOWN_AS   "quartz764"
 #define APOLLO_HOST_DETAILED   "GNU/Linux 3.10.0-1160.36.2.1chaos.ch6.x86_64 x86_64"
 
 #define APOLLO_CXX_COMPILER    "/usr/tce/packages/clang/clang-12.0.0/bin/clang++ "

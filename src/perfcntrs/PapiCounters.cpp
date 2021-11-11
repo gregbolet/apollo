@@ -283,10 +283,10 @@ std::vector<float> Apollo::PapiCounters::getSummaryStats()
 	// indicated by (PAPI_L3_TCM*1e6)/(PAPI_TOT_INS)
 	// so we have: < PAPI_DP_OPS, PAPI_TOT_INS, (PAPI_L3_TCM*1e6)/(PAPI_TOT_INS) > 
 
-	float PAPI_L3_TCM = toRet.back()*1000000;
+	float PAPI_L3_TCM_CNTR = toRet.back()*1000000;
 	toRet.pop_back();
-	PAPI_L3_TCM = PAPI_L3_TCM / toRet.back();
-	toRet.push_back(PAPI_L3_TCM);
+	PAPI_L3_TCM_CNTR = PAPI_L3_TCM_CNTR / toRet.back();
+	toRet.push_back(PAPI_L3_TCM_CNTR);
 
 	return toRet;
 }
