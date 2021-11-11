@@ -1,8 +1,0 @@
-Name: APOLLO
-Description: Apollo is an in situ machine learning tool for performance portability.
-Version: 2.0.0
-prefix=/g/g15/bolet1/workspace/apollo/buildVA/install
-includedir=${prefix}/include
-libdir=${prefix}/lib
-Libs: -L${libdir} -lapollo 
-Cflags: -I${includedir} 

@@ -20,3 +20,4 @@ GRTAGS
 tags
 *.dot
 *.pdf
+build*/
