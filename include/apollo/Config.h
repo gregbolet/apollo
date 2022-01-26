@@ -31,6 +31,7 @@ class Config {
         static int APOLLO_ENABLE_PERF_CNTRS;
         static int APOLLO_PERF_CNTRS_MLTPX;
         static std::vector<std::string> APOLLO_PERF_CNTRS;
+        static std::string APOLLO_SINGLE_MODEL_TO_LOAD;
 
     private:
         Config();

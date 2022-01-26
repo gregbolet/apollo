@@ -240,7 +240,11 @@ void Apollo::Region::initRegion(
         else if ("Load" == model_str)
         {
             std::string model_file;
-            if (pos == std::string::npos)
+            if(!Config::APOLLO_SINGLE_MODEL_TO_LOAD.empty()){
+                // If the user provided us a single model to use, let's load it
+                model_file = Config::APOLLO_SINGLE_MODEL_TO_LOAD;
+            }
+            else if (pos == std::string::npos)
             {
                 // Load per region model using the region name for the model file.
                 model_file = "dtree-latest-rank-" + std::to_string(apollo->mpiRank) + "-"+ std::string(name) + ".yaml";

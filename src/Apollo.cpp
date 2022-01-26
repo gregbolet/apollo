@@ -181,6 +181,7 @@ Apollo::Apollo()
     Config::APOLLO_TRACE_CSV_FOLDER_SUFFIX = apolloUtils::safeGetEnv( "APOLLO_TRACE_CSV_FOLDER_SUFFIX", "" );
 
     Config::APOLLO_DTREE_DEPTH = std::stoi( apolloUtils::safeGetEnv( "APOLLO_DTREE_DEPTH", "2" ) );
+    Config::APOLLO_SINGLE_MODEL_TO_LOAD = apolloUtils::safeGetEnv( "APOLLO_SINGLE_MODEL_TO_LOAD", "" );
 
 #ifdef PERF_CNTR_MODE
     Config::APOLLO_ENABLE_PERF_CNTRS = std::stoi( apolloUtils::safeGetEnv( "APOLLO_ENABLE_PERF_CNTRS", "0" ) );
