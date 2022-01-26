@@ -281,12 +281,13 @@ std::vector<float> Apollo::PapiCounters::getSummaryStats()
 	// < PAPI_DP_OPS, PAPI_TOT_INS, PAPI_L3_TCM >
 	// We simply change the last element to be the 'memory pressure'
 	// indicated by (PAPI_L3_TCM*1e6)/(PAPI_TOT_INS)
+	// intuitively: total cache misses per million instructions
 	// so we have: < PAPI_DP_OPS, PAPI_TOT_INS, (PAPI_L3_TCM*1e6)/(PAPI_TOT_INS) > 
 
-	float PAPI_L3_TCM_CNTR = toRet.back()*1000000;
-	toRet.pop_back();
-	PAPI_L3_TCM_CNTR = PAPI_L3_TCM_CNTR / toRet.back();
-	toRet.push_back(PAPI_L3_TCM_CNTR);
+	//float PAPI_L3_TCM_CNTR = toRet.back();
+	//toRet.pop_back();
+	//PAPI_L3_TCM_CNTR = PAPI_L3_TCM_CNTR / toRet.back();
+	//toRet.push_back(PAPI_L3_TCM_CNTR*1000000);
 
 	return toRet;
 }
