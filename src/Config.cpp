@@ -24,6 +24,7 @@ std::string Config::APOLLO_TRACE_CSV_FOLDER_SUFFIX;
 
 // Added to control decision tree depth
 int Config::APOLLO_DTREE_DEPTH;
+std::string Config::APOLLO_SINGLE_MODEL_TO_LOAD;
 
 #ifdef PERF_CNTR_MODE
     int Config::APOLLO_ENABLE_PERF_CNTRS;
