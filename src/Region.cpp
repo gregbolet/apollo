@@ -354,13 +354,13 @@ Apollo::Region::Region(const int num_features,
          trace_file << " f" << i;
 
     }
-  }
 #else
-      for (int i = 0; i < num_features; i++)
-         trace_file << " f" << i;
+    for (int i = 0; i < num_features; i++)
+       trace_file << " f" << i;
 #endif
+    trace_file << " policy xtime\n";
+  }
 
-  trace_file << " policy xtime\n";
   // std::cout << "Insert region " << name << " ptr " << this << std::endl;
   const auto ret = apollo->regions.insert({name, this});
 
@@ -451,45 +451,45 @@ void Apollo::Region::collectContext(Apollo::RegionContext *context,
 {
 #ifdef PERF_CNTR_MODE
   // If the performance counters were setup
-  if(this->papiPerfCnt){
+  if (this->papiPerfCnt && this->shouldRunCounters) {
 
     // The counters were run, this was the first time we saw this user-supplied
     // feature vector. Thus, we should save it to the feature-counter mapping
     // along with not adding the measure to the region measures due to the
-    // slight execution time overhead PAPI adds. 
-    if(this->shouldRunCounters){
+    // slight execution time overhead PAPI adds.
 
-        // First calculate the sum of each counter
-        // These summary statistics are calculated across threads, so we
-        // always have the same feature dimensions irregardless of thread count
-        std::vector<float> vals = this->papiPerfCnt->getSummaryStats();
+      // First calculate the sum of each counter
+      // These summary statistics are calculated across threads, so we
+      // always have the same feature dimensions irregardless of thread count
+      std::vector<float> vals = this->papiPerfCnt->getSummaryStats();
 
-        // Clear the PapiCounters counter values
-        this->papiPerfCnt->clearAllCntrValues();
+      // Clear the PapiCounters counter values
+      this->papiPerfCnt->clearAllCntrValues();
 
-        // Map the user-provided features to the counter values
-        this->feats_to_cntr_vals[context->features] = vals;
+      // Map the user-provided features to the counter values
+      this->feats_to_cntr_vals[context->features] = vals;
 
-        // Store these features for use after Region->end() call finishes
-        // and the context gets deleted (so we lose our context->features vector)
-        //this->lastFeats = context->features;
-
-    }
+      // Store these features for use after Region->end() call finishes
+      // and the context gets deleted (so we lose our context->features vector)
+      // this->lastFeats = context->features;
+  }
     else{
-      measures.push_back(
-          std::make_tuple(context->features, context->policy, metric));
 
-      if (Config::APOLLO_TRACE_CSV) {
-        trace_file << apollo->mpiRank << " ";
-        trace_file << model->name << " ";
-        trace_file << this->name << " ";
-        trace_file << context->idx << " ";
-        for (auto &f : context->features)
-          trace_file << f << " ";
-        trace_file << context->policy << " ";
-        trace_file << metric << "\n";
-      }
+    measures.push_back(
+        std::make_tuple(context->features, context->policy, metric));
+
+    if (Config::APOLLO_TRACE_CSV) {
+      trace_file << apollo->mpiRank << " ";
+      trace_file << model->name << " ";
+      trace_file << this->name << " ";
+      trace_file << context->idx << " ";
+      for (auto &f : context->features)
+        trace_file << f << " ";
+      trace_file << context->policy << " ";
+      trace_file << metric << "\n";
     }
+  } 
+
 #else
   measures.push_back(
       std::make_tuple(context->features, context->policy, metric));
@@ -574,20 +574,22 @@ void Apollo::Region::setFeature(Apollo::RegionContext *context, float value)
 {
   context->features.push_back(value);
 #ifdef PERF_CNTR_MODE
-    // Check to see if we've already seen this feature set before
-    // If not, let's set the flag to run the counters 
-    // If so, we should just not run the counter code
-    // as we know the counter values already since they're policy-independent
-    if(this->papiPerfCnt && context->features.size() == this->num_features){
-        this->shouldRunCounters = (this->feats_to_cntr_vals.find(context->features) == this->feats_to_cntr_vals.end());
+  // Check to see if we've already seen this feature set before
+  // If not, let's set the flag to run the counters
+  // If so, we should just not run the counter code
+  // as we know the counter values already since they're policy-independent
+  if (this->papiPerfCnt && context->features.size() == this->num_features) {
+    this->shouldRunCounters =
+        (this->feats_to_cntr_vals.find(context->features) ==
+         this->feats_to_cntr_vals.end());
 
-        // If we already have run the counters, then translate the passed-in
-        // feature vector so we can properly getPolicyIndex() if a tree has
-        // already been trained
-        if(!this->shouldRunCounters){
-            context->features = this->feats_to_cntr_vals[context->features];
-        }
+    // If we already have run the counters, then translate the passed-in
+    // feature vector so we can properly getPolicyIndex() if a tree has
+    // already been trained
+    if (!this->shouldRunCounters) {
+      context->features = this->feats_to_cntr_vals[context->features];
     }
+  }
 #endif
 
   return;

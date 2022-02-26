@@ -80,8 +80,17 @@ if (ENABLE_MPI)
 endif()
 
 if(ENABLE_PERF_CNTRS)
+    add_definitions(-DPERF_CNTR_MODE)
+
+    #find_package(PAPI REQUIRED)
+
     # Supply the PAPI library path
     if(PAPI_DIR)
+        message(STATUS "Given PAPI_DIR!")
+        include_directories(${PAPI_DIR}/include ${PAPI_DIR}/lib)
+
+        add_library(papi SHARED IMPORTED)
+  
         message(STATUS "LINKING PAPI!")
         target_link_libraries(apollo PUBLIC ${PAPI_DIR}/lib/libpapi.so)
     endif()
