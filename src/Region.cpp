@@ -295,7 +295,8 @@ static void parseDataset(
     } else if (std::regex_match(line, std::regex("\\s*\\}")))
       break;
     else
-      assert(false && "Error in parsing during loading");
+      throw std::runtime_error("Error parsing dataset during loading line: " +
+                               line);
   }
 }
 
