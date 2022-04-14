@@ -179,7 +179,7 @@ def main():
         with open('Dataset-' + str(r) + '.yaml', 'w') as f:
             f.write(output)
 
-        print('Wrote dataset file for region:', r)
+        //print('Wrote dataset file for region:', r)
 
 if __name__ == "__main__":
     main()
