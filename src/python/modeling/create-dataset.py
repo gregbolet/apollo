@@ -147,9 +147,11 @@ def main():
     if args.tracedirs:
         data = read_tracedirs(args.tracedirs)
 
+    print('Finished reading in all the datasets! Gathering unique regions...')
     #print('data\n', data)
     regions = data['region'].unique().tolist()
 
+    print('Creating region dataset files...')
     # Create datasets per region.
     for r in regions:
         data_per_region = data.loc[data['region'] == r].dropna(axis='columns').reset_index()
@@ -164,8 +166,10 @@ def main():
             output = agg_by_mean_min(data_per_region)
         else:
             raise RuntimeError('Invalid aggregation args ' + str(args.agg))
-        with open('Dataset-' + r + '.yaml', 'w') as f:
+        with open('Dataset-' + str(r) + '.yaml', 'w') as f:
             f.write(output)
+
+        print('Wrote dataset file for region:', r)
 
 if __name__ == "__main__":
     main()

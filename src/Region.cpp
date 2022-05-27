@@ -143,8 +143,16 @@ void Apollo::Region::train(int step)
 int Apollo::Region::getPolicyIndex(Apollo::RegionContext *context)
 {
 #ifdef PERF_CNTR_MODE
-    // If we're measuring perf cntrs, use the default policy
-    int choice = (this->shouldRunCounters) ? 0 : model->getIndex(context->features);
+    int choice;
+
+    // If we're using a static policy, we can't use the 0 default policy
+    if(model_name == "Static"){
+      choice = model->getIndex(context->features);      
+    }
+    else{
+      // If we're measuring perf cntrs, use the default policy
+      choice = (this->shouldRunCounters) ? 0 : model->getIndex(context->features);
+    }
 #else
     int choice = model->getIndex( context->features );
 #endif

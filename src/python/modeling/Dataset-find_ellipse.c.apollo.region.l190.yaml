@@ -1,0 +1,5 @@
+# agg by mean_min
+data: {
+	0: { features: [ 219, ], policy: 0, xtime: 0.0073518133333333345 },
+}
+
