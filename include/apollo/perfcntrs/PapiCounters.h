@@ -25,7 +25,7 @@ class Apollo::PapiCounters : public Apollo::PerfCounter{
 
         void startThread() override;
         void stopThread() override;        
-        void clearAllCntrValues() override; 
+        //void clearAllCntrValues() override; 
         std::vector<float> getSummaryStats() override;
         int numEvents;
         
@@ -41,13 +41,18 @@ class Apollo::PapiCounters : public Apollo::PerfCounter{
         mutable util::spinlock thread_lock;
 
         // Map the threadID to the counter value pointers
-        std::vector<long long*> all_cntr_values;
+        // std::vector<long long*> all_cntr_values;
 
         // Mapping of threadID to eventSet
         std::map<int, int> thread_id_to_eventset;
 
         // Mapping of threadID to cntr values 
         std::map<int, long long*> thread_id_to_cntr_ptr;
+
+        // Mapping of threadID to just executed boolean flag
+        // This is to keep track of which threads were just
+        // start/stopped so we only calculate the mean of their values
+        std::map<int, int> thread_id_just_run;
 
         // At initialization, convert the string 
         // event names to their integer codes

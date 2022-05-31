@@ -542,7 +542,10 @@ void Apollo::Region::collectContext(Apollo::RegionContext *context,
       std::vector<float> vals = this->papiPerfCnt->getSummaryStats();
 
       // Clear the PapiCounters counter values
-      this->papiPerfCnt->clearAllCntrValues();
+      // This would remove the pointers, we only want to do that
+      // on the region destructor when we are truly done with
+      // the papi counters
+      // this->papiPerfCnt->clearAllCntrValues();
 
       // Map the user-provided features to the counter values
       this->feats_to_cntr_vals[context->features] = vals;
