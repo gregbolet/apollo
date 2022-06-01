@@ -77,11 +77,20 @@ Apollo::PapiCounters::~PapiCounters()
 
 	int retval;
 	std::map<int, int>::iterator it;
+	long long ignore_vals[this->numEvents];
 
 	// Destruct each of the thread's EventSets
 	for(it = thread_id_to_eventset.begin();  it != thread_id_to_eventset.end(); it++){
 
 		int EventSet = it->second;
+
+		// stop counting events in the Event Set
+		// Store the resulting values into our counter values array
+		// We ignore the stored values
+		if ((retval = PAPI_stop(EventSet, ignore_vals)) != PAPI_OK)
+		{
+			fprintf(stderr, "Could NOT stop eventset counting!\n");
+		}
 
 		// Remove all events from the eventset
 		if ((retval = PAPI_cleanup_eventset(EventSet)) != PAPI_OK)
@@ -128,6 +137,7 @@ void Apollo::PapiCounters::startThread()
 	std::map<int, int>::iterator it = thread_id_to_eventset.find(threadId);
 
 	// If it's not in the mapping, add it to the mapping
+	// and also start the counting of the new EventSet
 	if(it == thread_id_to_eventset.end()){
 		// Keep track of the eventset identifier for this thread
 		int EventSet = PAPI_NULL;
@@ -188,16 +198,22 @@ void Apollo::PapiCounters::startThread()
 			this->thread_id_just_run[threadId] = 0;
 		}
 
+		// Start counting events in the Event Set implicitly zeros out counters
+		if (PAPI_start(EventSet) != PAPI_OK)
+		{
+			fprintf(stderr, "Could NOT start eventset counting!\n");
+		}
 	}
 
 	//printf("In startThread()\n");
 	int EventSet = this->thread_id_to_eventset[threadId];
 
-	// Start counting events in the Event Set implicitly zeros out counters
-	if (PAPI_start(EventSet) != PAPI_OK)
+	// Reset the counters in the EventSet to 0
+	if (PAPI_reset(EventSet) != PAPI_OK)
 	{
-		fprintf(stderr, "Could NOT start eventset counting!\n");
+		fprintf(stderr, "Could NOT reset eventset counting!\n");
 	}
+
 
 	//fprintf(stderr, "STARTED THREAD COUNTING!\n");
 }
@@ -210,12 +226,13 @@ void Apollo::PapiCounters::stopThread()
 	long long *cntr_vals = this->thread_id_to_cntr_ptr[threadId];
 	int retval;
 
-	// stop counting events in the Event Set
+	// count events in the Event Set
 	// Store the resulting values into our counter values array
-	if ((retval = PAPI_stop(EventSet, cntr_vals)) != PAPI_OK)
+	if ((retval = PAPI_read(EventSet, cntr_vals)) != PAPI_OK)
 	{
 		fprintf(stderr, "Could NOT stop eventset counting!\n");
 	}
+
 
 	// Now mark my thread ID as just having run
 	{
