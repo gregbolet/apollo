@@ -80,7 +80,7 @@ Apollo::PapiCounters::~PapiCounters()
 	long long ignore_vals[this->numEvents];
 
 	// Destruct each of the thread's EventSets
-	for(it = thread_id_to_eventset.begin();  it != thread_id_to_eventset.end(); it++){
+	for(it = thread_id_to_eventset.begin();  it != thread_id_to_eventset.end(); ++it){
 
 		int EventSet = it->second;
 
@@ -89,7 +89,7 @@ Apollo::PapiCounters::~PapiCounters()
 		// We ignore the stored values
 		if ((retval = PAPI_stop(EventSet, ignore_vals)) != PAPI_OK)
 		{
-			fprintf(stderr, "Could NOT stop eventset counting!\n");
+			fprintf(stderr, "Could NOT stop eventset counting! [%d]\n", retval);
 		}
 
 		// Remove all events from the eventset
@@ -143,11 +143,6 @@ void Apollo::PapiCounters::startThread()
 		int EventSet = PAPI_NULL;
 		int retval;
 	
-		// Register this thread with PAPI
-		//if ( ( retval = PAPI_register_thread() ) != PAPI_OK ) {
-		//fprintf(stderr, "PAPI thread registration error!\n");
-		//}
-	
 		// Create the Event Set for this thread
 		retval = PAPI_create_eventset(&EventSet);
 		if (retval != PAPI_OK)
@@ -199,19 +194,20 @@ void Apollo::PapiCounters::startThread()
 		}
 
 		// Start counting events in the Event Set implicitly zeros out counters
-		if (PAPI_start(EventSet) != PAPI_OK)
+		if ((retval = PAPI_start(EventSet)) != PAPI_OK)
 		{
-			fprintf(stderr, "Could NOT start eventset counting!\n");
+			fprintf(stderr, "Could NOT start eventset counting! [%d]\n", retval);
 		}
 	}
+	else{
+		//printf("In startThread()\n");
+		int EventSet = this->thread_id_to_eventset[threadId];
 
-	//printf("In startThread()\n");
-	int EventSet = this->thread_id_to_eventset[threadId];
-
-	// Reset the counters in the EventSet to 0
-	if (PAPI_reset(EventSet) != PAPI_OK)
-	{
-		fprintf(stderr, "Could NOT reset eventset counting!\n");
+		// Reset the counters in the EventSet to 0
+		if (PAPI_reset(EventSet) != PAPI_OK)
+		{
+			fprintf(stderr, "Could NOT reset eventset counting!\n");
+		}
 	}
 
 
@@ -230,7 +226,7 @@ void Apollo::PapiCounters::stopThread()
 	// Store the resulting values into our counter values array
 	if ((retval = PAPI_read(EventSet, cntr_vals)) != PAPI_OK)
 	{
-		fprintf(stderr, "Could NOT stop eventset counting!\n");
+		fprintf(stderr, "Could NOT do eventset counting! [%d]\n", retval);
 	}
 
 
@@ -240,27 +236,7 @@ void Apollo::PapiCounters::stopThread()
 		this->thread_id_just_run[threadId] = 1;
 	}
 
-	// Store the pointer to that memory into our list
-	// Lock this little scope to store the counter values
-	//{
-		//std::lock_guard<util::spinlock> g(thread_lock);
-		//this->all_cntr_values.push_back(cntr_vals);
-	//}
-
 }
-
-//void Apollo::PapiCounters::clearAllCntrValues()
-//{
-//
-//	// Free the counter arrays
-//	for (std::vector<long long *>::iterator i = std::begin(this->all_cntr_values);
-//			 i != std::end(this->all_cntr_values); ++i)
-//	{
-//		free(*i);
-//	}
-//
-//	this->all_cntr_values.clear();
-//}
 
 std::vector<float> Apollo::PapiCounters::getSummaryStats()
 {

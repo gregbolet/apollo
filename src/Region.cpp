@@ -466,6 +466,7 @@ Apollo::Region::~Region()
 {
 #ifdef PERF_CNTR_MODE
     if(this->papiPerfCnt){
+        //fprintf(stderr, "stopping papicntrs for region [%s]\n", this->name);
         delete this->papiPerfCnt;
     }
 #endif
