@@ -106,12 +106,20 @@ std::vector<float> Apollo::PapiCounters::getSummaryStats()
 				long long* vals = this->apollo->cntr_values + (threadId * this->apollo->num_events);
 
 				sum += vals[j];
-				this->apollo->EventSet_just_used[threadId] = 0;
 			}
 		}
 
 		// We want to take the sum of the work for the counters
 		toRet.push_back((float) sum);
+	}
+
+	// Set all the just_used properties to 0
+	for(int threadId = 0; threadId < this->apollo->num_eventsets; ++threadId){
+		int was_just_run = this->apollo->EventSet_just_used[threadId];
+
+		if(was_just_run){
+			this->apollo->EventSet_just_used[threadId] = 0;
+		}
 	}
 
 	// We assume we will have the user supply 3 perfcntrs

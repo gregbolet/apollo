@@ -186,7 +186,7 @@ Apollo::Apollo()
 		fprintf(stderr, "PAPI thread init error: code [%d]!\n", retval);
 	}
 
-	this->events_to_track = (int *)malloc(sizeof(int) * num_events);
+	this->events_to_track = (int *)malloc(sizeof(int) * this->num_events);
 
 	// Add each of the events by getting their event code from the string
 	int eventCode = PAPI_NULL;
