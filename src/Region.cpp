@@ -308,11 +308,18 @@ Apollo::Region::Region(const int num_features,
       current_context(nullptr),
       idx(0)
 {
+  apollo = Apollo::instance();
+
+  strncpy(name, regionName, sizeof(name) - 1);
+  name[sizeof(name) - 1] = '\0';
+
+  parsePolicyModel(Config::APOLLO_POLICY_MODEL);
+
 #ifdef PERF_CNTR_MODE
     if(Config::APOLLO_ENABLE_PERF_CNTRS){
         //this->num_features = (int) Config::APOLLO_PERF_CNTRS.size();
         //this->shouldRunCounters = 1;
-        this->papiPerfCnt = new Apollo::PapiCounters(Config::APOLLO_PERF_CNTRS_MLTPX, Config::APOLLO_PERF_CNTRS);
+        this->papiPerfCnt = new Apollo::PapiCounters(this->apollo);
     }
     else{
         this->shouldRunCounters = 0;
@@ -323,17 +330,11 @@ Apollo::Region::Region(const int num_features,
     this->papiPerfCnt = nullptr;
 #endif 
 
-  apollo = Apollo::instance();
-
-  strncpy(name, regionName, sizeof(name) - 1);
-  name[sizeof(name) - 1] = '\0';
-
-  parsePolicyModel(Config::APOLLO_POLICY_MODEL);
 
 #ifdef PERF_CNTR_MODE
     if(Config::APOLLO_ENABLE_PERF_CNTRS){
   model = ModelFactory::createPolicyModel(model_name,
-                                          this->papiPerfCnt->numEvents,
+                                          apollo->num_events,
                                           num_policies,
                                           model_params);
     }
@@ -424,7 +425,7 @@ Apollo::Region::Region(const int num_features,
 
 #ifdef PERF_CNTR_MODE
     if(Config::APOLLO_ENABLE_PERF_CNTRS){
-      for (int i = 0; i < papiPerfCnt->numEvents; i++)
+      for (int i = 0; i < papiPerfCnt->apollo->num_events; i++)
          trace_file << " f" << i;
     }
     else{

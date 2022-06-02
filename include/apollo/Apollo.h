@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "apollo/Config.h"
+#include "papi.h"
 
 class Apollo
 {
@@ -31,6 +32,19 @@ public:
   class Timer;
   class PerfCounter;
   class PapiCounters;
+
+  // PAPI_PERF_CNTR
+  // These are all indexed by threadID which omp
+  // doles out starting at 0, ending at omp_get_max_threads()-1
+  int num_eventsets;
+  int num_events;
+  int is_multiplexed;
+  int* EventSets;
+  int* EventSet_is_started;
+  int* EventSet_just_used;
+  int* events_to_track;
+  // This should be indexed with a stride of num_events*threadID
+  long long* cntr_values;
 
   //
   int mpiSize;  // 1 if no MPI

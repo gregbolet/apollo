@@ -11,7 +11,7 @@ export LDFLAGS="-Wl,--rpath,${LLVM_INSTALL}/lib"
 
 cd ./build
 cmake   -DENABLE_MPI=OFF \
- 	-DCMAKE_BUILD_TYPE=Release \
+ 	-DCMAKE_BUILD_TYPE=RelWithDebInfo \
   -DCMAKE_INSTALL_PREFIX=./install \
   -DCMAKE_CXX_COMPILER=${LLVM_INSTALL}/bin/clang++ \
   -DCMAKE_C_COMPILER=${LLVM_INSTALL}/bin/clang \

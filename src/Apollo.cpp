@@ -158,6 +158,68 @@ Apollo::Apollo()
     //for(const auto& value: Config::APOLLO_PERF_CNTRS) {
         //std::cout << "(" << value << ")" << std::endl;
     //}
+
+	int retval;
+    this->num_events = Config::APOLLO_PERF_CNTRS.size();
+    this->is_multiplexed = Config::APOLLO_PERF_CNTRS_MLTPX;
+
+	// Check correct PAPI versioning
+	if ((retval = PAPI_library_init(PAPI_VER_CURRENT)) != PAPI_VER_CURRENT) {
+		fprintf(stderr, "PAPI_library_init error: code [%d] and version number [%d]\n", retval, PAPI_VER_CURRENT);
+	}
+
+	if (this->is_multiplexed){
+
+		if ((retval = PAPI_multiplex_init()) == PAPI_ENOSUPP) {
+			fprintf(stderr, "Multiplexing not supported!\n");
+		}
+		else if (retval != PAPI_OK) {
+			fprintf(stderr, "PAPI multiplexing error: code [%d]\n", retval);
+		}
+	}
+
+	// Initialize the threading support
+	if ((retval = PAPI_thread_init((unsigned long (*)(void))(omp_get_thread_num))) == PAPI_ECMP) {
+		fprintf(stderr, "PAPI thread init error: code [%d] PAPI_ECMP!\n", retval);
+	}
+	else if (retval != PAPI_OK) {
+		fprintf(stderr, "PAPI thread init error: code [%d]!\n", retval);
+	}
+
+	this->events_to_track = (int *)malloc(sizeof(int) * num_events);
+
+	// Add each of the events by getting their event code from the string
+	int eventCode = PAPI_NULL;
+	for (int i = 0; i < this->num_events; i++) {
+		// get address of the first element of the i-th event string name
+		const char *event = Config::APOLLO_PERF_CNTRS[i].c_str();
+
+		if ((retval = PAPI_event_name_to_code(event, &eventCode)) != PAPI_OK) {
+			fprintf(stderr, "Event code for [%s] does not exist! errcode:[%d]\n", event, retval);
+		}
+
+		this->events_to_track[i] = eventCode;
+	}
+
+    // Let's set up the EventSets array here
+    // Associate the EventSets to each thread and start counting
+    this->num_eventsets = omp_get_max_threads();
+
+    // Through the EventSets array we implicitly map threadID to EventSet
+    this->EventSets           = (int *) malloc(sizeof(int) * this->num_eventsets);
+    this->EventSet_is_started = (int *) malloc(sizeof(int) * this->num_eventsets);
+    this->EventSet_just_used  = (int *) malloc(sizeof(int) * this->num_eventsets);
+
+
+    // Default the state-tracking arrays
+    for(int i = 0; i < this->num_eventsets; ++i){
+        this->EventSet_is_started[i] = 0;
+        this->EventSet_just_used[i] = 0;
+    }
+
+    // Let's allocate all the memory for the counter values to be stored too
+    this->cntr_values = (long long*) malloc(sizeof(long long) * this->num_events * this->num_eventsets);
+
 #endif
 
     if (Config::APOLLO_COLLECTIVE_TRAINING) {
@@ -202,11 +264,47 @@ Apollo::Apollo()
 
 Apollo::~Apollo()
 {
+#ifdef PERF_CNTR_MODE
+
+    int retval; 
+    long long ignore_vals[this->num_events];
+
+    // Let's stop and delete all the EventSets here
+    for(int i = 0; i < this->num_eventsets; ++i){
+        int EventSet = this->EventSets[i];
+
+        if(this->EventSet_is_started[i]){
+		    if ((retval = PAPI_stop(EventSet, ignore_vals)) != PAPI_OK) {
+		    	fprintf(stderr, "Could NOT stop eventset counting! [%d]\n", retval);
+		    }
+
+		    // Remove all events from the eventset
+		    if ((retval = PAPI_cleanup_eventset(EventSet)) != PAPI_OK) {
+		    	fprintf(stderr, "PAPI could not cleanup eventset!\n");
+		    }
+
+		    // Deallocate the empty eventset from memory
+		    if ((retval = PAPI_destroy_eventset(&EventSet)) != PAPI_OK) {
+		    	fprintf(stderr, "PAPI could not destroy eventset!\n");
+		    }
+        }
+
+    }
+
+    // Let's delete the EventSets mapping here
+    free(this->EventSets);
+    free(this->EventSet_is_started);
+    free(this->EventSet_just_used);
+    free(this->events_to_track);
+    free(this->cntr_values);
+#endif
+
     for(auto &it : regions) {
         Region *r = it.second;
         delete r;
     }
     std::cerr << "Apollo: total region executions: " << region_executions << std::endl;
+
 }
 
 #ifdef ENABLE_MPI
