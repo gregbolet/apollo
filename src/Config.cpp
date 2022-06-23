@@ -22,12 +22,8 @@ int Config::APOLLO_TRACE_BEST_POLICIES;
 int Config::APOLLO_GLOBAL_TRAIN_PERIOD;
 int Config::APOLLO_PER_REGION_TRAIN_PERIOD;
 int Config::APOLLO_TRACE_CSV;
+int Config::APOLLO_PERSISTENT_DATASETS;
 std::string Config::APOLLO_POLICY_MODEL;
-std::string Config::APOLLO_TRACE_CSV_FOLDER_SUFFIX;
-
-// Added to control decision tree depth
-int Config::APOLLO_DTREE_DEPTH;
-std::string Config::APOLLO_SINGLE_MODEL_TO_LOAD;
 
 #ifdef PERF_CNTR_MODE
     int Config::APOLLO_ENABLE_PERF_CNTRS;
@@ -35,3 +31,8 @@ std::string Config::APOLLO_SINGLE_MODEL_TO_LOAD;
     
     std::vector<std::string> Config::APOLLO_PERF_CNTRS;
 #endif
+
+std::string Config::APOLLO_OUTPUT_DIR;
+std::string Config::APOLLO_DATASETS_DIR;
+std::string Config::APOLLO_TRACES_DIR;
+std::string Config::APOLLO_MODELS_DIR;

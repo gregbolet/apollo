@@ -9,32 +9,36 @@
 #include <string>
 #include <vector>
 
-class Config {
-    public:
-        static int APOLLO_COLLECTIVE_TRAINING;
-        static int APOLLO_LOCAL_TRAINING;
-        static int APOLLO_SINGLE_MODEL;
-        static int APOLLO_REGION_MODEL;
-        static int APOLLO_TRACE_POLICY;
-        static int APOLLO_RETRAIN_ENABLE;
-        static float APOLLO_RETRAIN_TIME_THRESHOLD;
-        static float APOLLO_RETRAIN_REGION_THRESHOLD;
-        static int APOLLO_STORE_MODELS;
-        static int APOLLO_TRACE_RETRAIN;
-        static int APOLLO_TRACE_ALLGATHER;
-        static int APOLLO_TRACE_BEST_POLICIES;
-        static int APOLLO_GLOBAL_TRAIN_PERIOD;
-        static int APOLLO_PER_REGION_TRAIN_PERIOD;
-        static int APOLLO_TRACE_CSV;
-        static std::string APOLLO_POLICY_MODEL;
-        static std::string APOLLO_TRACE_CSV_FOLDER_SUFFIX;
+class Config
+{
+public:
+  static int APOLLO_COLLECTIVE_TRAINING;
+  static int APOLLO_LOCAL_TRAINING;
+  static int APOLLO_SINGLE_MODEL;
+  static int APOLLO_REGION_MODEL;
+  static int APOLLO_TRACE_POLICY;
+  static int APOLLO_RETRAIN_ENABLE;
+  static float APOLLO_RETRAIN_TIME_THRESHOLD;
+  static float APOLLO_RETRAIN_REGION_THRESHOLD;
+  static int APOLLO_STORE_MODELS;
+  static int APOLLO_TRACE_RETRAIN;
+  static int APOLLO_TRACE_ALLGATHER;
+  static int APOLLO_TRACE_BEST_POLICIES;
+  static int APOLLO_GLOBAL_TRAIN_PERIOD;
+  static int APOLLO_PER_REGION_TRAIN_PERIOD;
+  static int APOLLO_TRACE_CSV;
+  static int APOLLO_PERSISTENT_DATASETS;
+  static std::string APOLLO_POLICY_MODEL;
+  static std::string APOLLO_OUTPUT_DIR;
+  static std::string APOLLO_DATASETS_DIR;
+  static std::string APOLLO_TRACES_DIR;
+  static std::string APOLLO_MODELS_DIR;
 
-        static int APOLLO_DTREE_DEPTH;
-
-        static int APOLLO_ENABLE_PERF_CNTRS;
-        static int APOLLO_PERF_CNTRS_MLTPX;
-        static std::vector<std::string> APOLLO_PERF_CNTRS;
-        static std::string APOLLO_SINGLE_MODEL_TO_LOAD;
+  static int APOLLO_DTREE_DEPTH;
+  static int APOLLO_ENABLE_PERF_CNTRS;
+  static int APOLLO_PERF_CNTRS_MLTPX;
+  static std::vector<std::string> APOLLO_PERF_CNTRS;
+  static std::string APOLLO_SINGLE_MODEL_TO_LOAD;
 
     private:
         Config();

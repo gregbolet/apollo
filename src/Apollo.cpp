@@ -6,6 +6,8 @@
 #include "apollo/Apollo.h"
 
 #include <execinfo.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #include <algorithm>
 #include <cassert>
@@ -79,6 +81,14 @@ inline const char *safeGetEnv(const char *var_name,
   }
 }
 
+// TODO: convert to filesystem C++17 API when Apollo moves to it
+void createDir(const std::string &dirname)
+{
+  int ret = mkdir(dirname.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+  if (ret != 0 && errno != EEXIST)
+    throw std::runtime_error("Error creating directory " + dirname + " : " +
+                             strerror(errno));
+}
 
 }  // namespace apolloUtils
 
@@ -127,23 +137,48 @@ Apollo::Apollo()
     region_executions = 0;
 
     // Initialize config with defaults
-    Config::APOLLO_POLICY_MODEL         = apolloUtils::safeGetEnv( "APOLLO_POLICY_MODEL", "Static,policy=0" );
-    Config::APOLLO_COLLECTIVE_TRAINING = std::stoi( apolloUtils::safeGetEnv( "APOLLO_COLLECTIVE_TRAINING", "0" ) );
-    Config::APOLLO_LOCAL_TRAINING      = std::stoi( apolloUtils::safeGetEnv( "APOLLO_LOCAL_TRAINING", "1" ) );
-    Config::APOLLO_SINGLE_MODEL        = std::stoi( apolloUtils::safeGetEnv( "APOLLO_SINGLE_MODEL", "0" ) );
-    Config::APOLLO_REGION_MODEL        = std::stoi( apolloUtils::safeGetEnv( "APOLLO_REGION_MODEL", "1" ) );
-    Config::APOLLO_GLOBAL_TRAIN_PERIOD = std::stoi( apolloUtils::safeGetEnv( "APOLLO_GLOBAL_TRAIN_PERIOD", "0" ) );
-    Config::APOLLO_PER_REGION_TRAIN_PERIOD = std::stoi( apolloUtils::safeGetEnv( "APOLLO_PER_REGION_TRAIN_PERIOD", "0" ) );
-    Config::APOLLO_TRACE_POLICY        = std::stoi( apolloUtils::safeGetEnv( "APOLLO_TRACE_POLICY", "0" ) );
-    Config::APOLLO_STORE_MODELS        = std::stoi( apolloUtils::safeGetEnv( "APOLLO_STORE_MODELS", "0" ) );
-    Config::APOLLO_TRACE_RETRAIN       = std::stoi( apolloUtils::safeGetEnv( "APOLLO_TRACE_RETRAIN", "0" ) );
-    Config::APOLLO_TRACE_ALLGATHER     = std::stoi( apolloUtils::safeGetEnv( "APOLLO_TRACE_ALLGATHER", "0" ) );
-    Config::APOLLO_TRACE_BEST_POLICIES = std::stoi( apolloUtils::safeGetEnv( "APOLLO_TRACE_BEST_POLICIES", "0" ) );
-    Config::APOLLO_RETRAIN_ENABLE      = std::stoi( apolloUtils::safeGetEnv( "APOLLO_RETRAIN_ENABLE", "0" ) );
-    Config::APOLLO_RETRAIN_TIME_THRESHOLD   = std::stof( apolloUtils::safeGetEnv( "APOLLO_RETRAIN_TIME_THRESHOLD", "2.0" ) );
-    Config::APOLLO_RETRAIN_REGION_THRESHOLD = std::stof( apolloUtils::safeGetEnv( "APOLLO_RETRAIN_REGION_THRESHOLD", "0.5" ) );
-    Config::APOLLO_TRACE_CSV = std::stoi( apolloUtils::safeGetEnv( "APOLLO_TRACE_CSV", "0" ) );
-    Config::APOLLO_TRACE_CSV_FOLDER_SUFFIX = apolloUtils::safeGetEnv( "APOLLO_TRACE_CSV_FOLDER_SUFFIX", "" );
+  Config::APOLLO_POLICY_MODEL =
+      apolloUtils::safeGetEnv("APOLLO_POLICY_MODEL", "Static,policy=0");
+  Config::APOLLO_COLLECTIVE_TRAINING =
+      std::stoi(apolloUtils::safeGetEnv("APOLLO_COLLECTIVE_TRAINING", "0"));
+  Config::APOLLO_LOCAL_TRAINING =
+      std::stoi(apolloUtils::safeGetEnv("APOLLO_LOCAL_TRAINING", "1"));
+  Config::APOLLO_SINGLE_MODEL =
+      std::stoi(apolloUtils::safeGetEnv("APOLLO_SINGLE_MODEL", "0"));
+  Config::APOLLO_REGION_MODEL =
+      std::stoi(apolloUtils::safeGetEnv("APOLLO_REGION_MODEL", "1"));
+  Config::APOLLO_GLOBAL_TRAIN_PERIOD =
+      std::stoi(apolloUtils::safeGetEnv("APOLLO_GLOBAL_TRAIN_PERIOD", "0"));
+  Config::APOLLO_PER_REGION_TRAIN_PERIOD =
+      std::stoi(apolloUtils::safeGetEnv("APOLLO_PER_REGION_TRAIN_PERIOD", "0"));
+  Config::APOLLO_TRACE_POLICY =
+      std::stoi(apolloUtils::safeGetEnv("APOLLO_TRACE_POLICY", "0"));
+  Config::APOLLO_STORE_MODELS =
+      std::stoi(apolloUtils::safeGetEnv("APOLLO_STORE_MODELS", "0"));
+  Config::APOLLO_TRACE_RETRAIN =
+      std::stoi(apolloUtils::safeGetEnv("APOLLO_TRACE_RETRAIN", "0"));
+  Config::APOLLO_TRACE_ALLGATHER =
+      std::stoi(apolloUtils::safeGetEnv("APOLLO_TRACE_ALLGATHER", "0"));
+  Config::APOLLO_TRACE_BEST_POLICIES =
+      std::stoi(apolloUtils::safeGetEnv("APOLLO_TRACE_BEST_POLICIES", "0"));
+  Config::APOLLO_RETRAIN_ENABLE =
+      std::stoi(apolloUtils::safeGetEnv("APOLLO_RETRAIN_ENABLE", "0"));
+  Config::APOLLO_RETRAIN_TIME_THRESHOLD = std::stof(
+      apolloUtils::safeGetEnv("APOLLO_RETRAIN_TIME_THRESHOLD", "2.0"));
+  Config::APOLLO_RETRAIN_REGION_THRESHOLD = std::stof(
+      apolloUtils::safeGetEnv("APOLLO_RETRAIN_REGION_THRESHOLD", "0.5"));
+  Config::APOLLO_TRACE_CSV =
+      std::stoi(apolloUtils::safeGetEnv("APOLLO_TRACE_CSV", "0"));
+  Config::APOLLO_PERSISTENT_DATASETS =
+      std::stoi(apolloUtils::safeGetEnv("APOLLO_PERSISTENT_DATASETS", "0"));
+  Config::APOLLO_OUTPUT_DIR =
+      apolloUtils::safeGetEnv("APOLLO_OUTPUT_DIR", ".apollo");
+  Config::APOLLO_DATASETS_DIR =
+      apolloUtils::safeGetEnv("APOLLO_DATASETS_DIR", "datasets");
+  Config::APOLLO_TRACES_DIR =
+      apolloUtils::safeGetEnv("APOLLO_TRACES_DIR", "traces");
+  Config::APOLLO_MODELS_DIR =
+      apolloUtils::safeGetEnv("APOLLO_MODELS_DIR", "models");
 
 #ifdef PERF_CNTR_MODE
     Config::APOLLO_ENABLE_PERF_CNTRS = std::stoi( apolloUtils::safeGetEnv( "APOLLO_ENABLE_PERF_CNTRS", "0" ) );
@@ -252,6 +287,20 @@ Apollo::Apollo()
               << std::endl;
     abort();
   }
+
+  apolloUtils::createDir(Config::APOLLO_OUTPUT_DIR);
+
+  if (Config::APOLLO_PERSISTENT_DATASETS)
+    apolloUtils::createDir(Config::APOLLO_OUTPUT_DIR + "/" +
+                           Config::APOLLO_DATASETS_DIR);
+
+  if (Config::APOLLO_TRACE_CSV)
+    apolloUtils::createDir(Config::APOLLO_OUTPUT_DIR + "/" +
+                           Config::APOLLO_TRACES_DIR);
+
+  if (Config::APOLLO_STORE_MODELS)
+    apolloUtils::createDir(Config::APOLLO_OUTPUT_DIR + "/" +
+                           Config::APOLLO_MODELS_DIR);
 
 #ifdef ENABLE_MPI
   MPI_Comm_dup(MPI_COMM_WORLD, &apollo_mpi_comm);
