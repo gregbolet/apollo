@@ -29,6 +29,7 @@ public:
 
   class Region;
   struct RegionContext;
+  class Dataset;
   class Timer;
   class PerfCounter;
   class PapiCounters;
