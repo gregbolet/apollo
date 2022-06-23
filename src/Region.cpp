@@ -420,7 +420,7 @@ Apollo::Region::Region(const int num_features,
       abort();
     }
     // Write header.
-    trace_file << "rankid training region idx";
+    trace_file << "rankid training region idx globalidx";
     // trace_file << "features";
 
 #ifdef PERF_CNTR_MODE
@@ -535,45 +535,23 @@ void Apollo::Region::collectContext(Apollo::RegionContext *context,
 
     // The counters were run, this was the first time we saw this user-supplied
     // feature vector. Thus, we should save it to the feature-counter mapping
-    // along with not adding the measure to the region measures due to the
-    // slight execution time overhead PAPI adds.
+    // along with adding the measure to the region measures.
 
       // First calculate the sum of each counter
       // These summary statistics are calculated across threads, so we
       // always have the same feature dimensions irregardless of thread count
       std::vector<float> vals = this->papiPerfCnt->getSummaryStats();
 
-      // Clear the PapiCounters counter values
-      // This would remove the pointers, we only want to do that
-      // on the region destructor when we are truly done with
-      // the papi counters
-      // this->papiPerfCnt->clearAllCntrValues();
-
       // Map the user-provided features to the counter values
       this->feats_to_cntr_vals[context->features] = vals;
 
-      // Store these features for use after Region->end() call finishes
-      // and the context gets deleted (so we lose our context->features vector)
-      // this->lastFeats = context->features;
+      // Set the current context features to these new values
+      // so that we collect the timing measure and write it to
+      // the trace file
+      context->features = vals;
   }
-    else{
+#endif
 
-    measures.push_back(
-        std::make_tuple(context->features, context->policy, metric));
-
-    if (Config::APOLLO_TRACE_CSV) {
-      trace_file << apollo->mpiRank << " ";
-      trace_file << model->name << " ";
-      trace_file << this->name << " ";
-      trace_file << context->idx << " ";
-      for (auto &f : context->features)
-        trace_file << f << " ";
-      trace_file << context->policy << " ";
-      trace_file << metric << "\n";
-    }
-  } 
-
-#else
   measures.push_back(
       std::make_tuple(context->features, context->policy, metric));
 
@@ -581,13 +559,13 @@ void Apollo::Region::collectContext(Apollo::RegionContext *context,
     trace_file << apollo->mpiRank << " ";
     trace_file << model->name << " ";
     trace_file << this->name << " ";
-    trace_file << context->idx << " ";
+    trace_file << context->idx << " "
+    trace_file << apollo->region_executions << " ";
     for (auto &f : context->features)
       trace_file << f << " ";
     trace_file << context->policy << " ";
     trace_file << metric << "\n";
   }
-#endif
 
   apollo->region_executions++;
 
