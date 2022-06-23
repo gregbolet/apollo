@@ -9,6 +9,7 @@ void Apollo::PapiCounters::startThread()
 {
 
 	int threadId = omp_get_thread_num();
+	int retval;
 
 	// Here we need to check if the counters for this thread have
 	// been initialized. If not, we set them up. If so, we skip the setup.
@@ -16,7 +17,6 @@ void Apollo::PapiCounters::startThread()
 	if(!this->apollo->EventSet_is_started[threadId]){
 		// Keep track of the eventset identifier for this thread
 		int EventSet = PAPI_NULL;
-		int retval;
 	
 		// Create the Event Set for this thread
 		if ((retval = PAPI_create_eventset(&EventSet)) != PAPI_OK){
@@ -59,8 +59,8 @@ void Apollo::PapiCounters::startThread()
 		int EventSet = this->apollo->EventSets[threadId];
 
 		// Reset the counters in the EventSet to 0
-		if (PAPI_reset(EventSet) != PAPI_OK) {
-			fprintf(stderr, "Could NOT reset eventset counting!\n");
+		if ((retval = PAPI_reset(EventSet)) != PAPI_OK) {
+			fprintf(stderr, "Could NOT reset eventset counting! [%d]\n", retval);
 		}
 	}
 
