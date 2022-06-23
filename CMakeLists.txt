@@ -23,9 +23,8 @@ option(ENABLE_JIT_DTREE "Enable JIT generated DecisionTree eval functions (suppo
 option(ENABLE_CUDA "Enable CUDA for asynchronous timing of CUDA regions" OFF)
 option(ENABLE_HIP "Enable HIP for asynchronous timing of HIP regions" OFF)
 option(ENABLE_PERF_CNTRS "Require and enabled performance counter monitoring?" OFF)
+option(ENABLE_TESTS "Enable building Apollo tests" OFF)
 option(BUILD_SHARED_LIBS "Build Apollo as a shared library instead of static" OFF)
-#
-set(ENABLE_TESTS "Enabe building Apollo tests" OFF CACHE STRING "")
 #
 #####
 
