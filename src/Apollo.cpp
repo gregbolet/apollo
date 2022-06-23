@@ -553,13 +553,17 @@ Apollo::train(int step) {
 }
 
 extern "C" {
- void *__apollo_region_create(int num_features, char *id, int num_policies) noexcept{
-     static Apollo *apollo = Apollo::instance();
-     //std::string callpathOffset = apollo->getCallpathOffset(3);
-     std::cout << "CREATE region " << id << " num_features " << num_features
-               << " num policies " << num_policies << std::endl;
-     return new Apollo::Region(num_features, id, num_policies);
- }
+void *__apollo_region_create(int num_features,
+                             const char *id,
+                             int num_policies,
+                             const char *model_info) noexcept
+{
+  static Apollo *apollo = Apollo::instance();
+  // std::string callpathOffset = apollo->getCallpathOffset(3);
+  std::cout << "CREATE region " << id << " num_features " << num_features
+            << " num policies " << num_policies << std::endl;
+  return new Apollo::Region(num_features, id, num_policies, model_info);
+}
 
  void __apollo_region_begin(Apollo::Region *r) noexcept{
      //std::cout << "BEGIN region " << r->name << std::endl;
@@ -595,4 +599,8 @@ extern "C" {
      //std::cout << "Stopped Apollo Thread!" << std::endl;
  }
 #endif
+
+ void __apollo_region_train(Apollo::Region *r, int step) noexcept{
+     r->train(step);
+ }
 }

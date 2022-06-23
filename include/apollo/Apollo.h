@@ -73,13 +73,17 @@ private:
 };  // end: Apollo
 
 extern "C" {
- void *__apollo_region_create(int num_features, char *id, int num_policies) noexcept;
- void __apollo_region_begin(Apollo::Region *r) noexcept;
- void __apollo_region_end(Apollo::Region *r) noexcept;
- void __apollo_region_set_feature(Apollo::Region *r, float feature) noexcept;
- int __apollo_region_get_policy(Apollo::Region *r) noexcept;
- void __apollo_region_thread_begin(Apollo::Region *r) noexcept;
- void __apollo_region_thread_end(Apollo::Region *r) noexcept;
+void *__apollo_region_create(int num_features,
+                             const char *id,
+                             int num_policies,
+                             const char *model_info) noexcept;
+void __apollo_region_begin(Apollo::Region *r) noexcept;
+void __apollo_region_end(Apollo::Region *r) noexcept;
+void __apollo_region_set_feature(Apollo::Region *r, float feature) noexcept;
+int __apollo_region_get_policy(Apollo::Region *r) noexcept;
+void __apollo_region_train(Apollo::Region *r, int step) noexcept;
+void __apollo_region_thread_begin(Apollo::Region *r) noexcept;
+void __apollo_region_thread_end(Apollo::Region *r) noexcept;
 }
 
 #endif
