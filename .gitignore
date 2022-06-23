@@ -21,3 +21,4 @@ tags
 *.dot
 *.pdf
 build*/
+*.yaml

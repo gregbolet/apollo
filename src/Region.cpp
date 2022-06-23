@@ -143,8 +143,16 @@ void Apollo::Region::train(int step)
 int Apollo::Region::getPolicyIndex(Apollo::RegionContext *context)
 {
 #ifdef PERF_CNTR_MODE
-    // If we're measuring perf cntrs, use the default policy
-    int choice = (this->shouldRunCounters) ? 0 : model->getIndex(context->features);
+    int choice;
+
+    // If we're using a static policy, we can't use the 0 default policy
+    if(model_name == "Static"){
+      choice = model->getIndex(context->features);      
+    }
+    else{
+      // If we're measuring perf cntrs, use the default policy
+      choice = (this->shouldRunCounters) ? 0 : model->getIndex(context->features);
+    }
 #else
     int choice = model->getIndex( context->features );
 #endif
@@ -300,11 +308,18 @@ Apollo::Region::Region(const int num_features,
       current_context(nullptr),
       idx(0)
 {
+  apollo = Apollo::instance();
+
+  strncpy(name, regionName, sizeof(name) - 1);
+  name[sizeof(name) - 1] = '\0';
+
+  parsePolicyModel(Config::APOLLO_POLICY_MODEL);
+
 #ifdef PERF_CNTR_MODE
     if(Config::APOLLO_ENABLE_PERF_CNTRS){
         //this->num_features = (int) Config::APOLLO_PERF_CNTRS.size();
         //this->shouldRunCounters = 1;
-        this->papiPerfCnt = new Apollo::PapiCounters(Config::APOLLO_PERF_CNTRS_MLTPX, Config::APOLLO_PERF_CNTRS);
+        this->papiPerfCnt = new Apollo::PapiCounters(this->apollo);
     }
     else{
         this->shouldRunCounters = 0;
@@ -315,17 +330,11 @@ Apollo::Region::Region(const int num_features,
     this->papiPerfCnt = nullptr;
 #endif 
 
-  apollo = Apollo::instance();
-
-  strncpy(name, regionName, sizeof(name) - 1);
-  name[sizeof(name) - 1] = '\0';
-
-  parsePolicyModel(Config::APOLLO_POLICY_MODEL);
 
 #ifdef PERF_CNTR_MODE
     if(Config::APOLLO_ENABLE_PERF_CNTRS){
   model = ModelFactory::createPolicyModel(model_name,
-                                          this->papiPerfCnt->numEvents,
+                                          apollo->num_events,
                                           num_policies,
                                           model_params);
     }
@@ -411,12 +420,12 @@ Apollo::Region::Region(const int num_features,
       abort();
     }
     // Write header.
-    trace_file << "rankid training region idx";
+    trace_file << "rankid training region idx globalidx";
     // trace_file << "features";
 
 #ifdef PERF_CNTR_MODE
     if(Config::APOLLO_ENABLE_PERF_CNTRS){
-      for (int i = 0; i < papiPerfCnt->numEvents; i++)
+      for (int i = 0; i < papiPerfCnt->apollo->num_events; i++)
          trace_file << " f" << i;
     }
     else{
@@ -458,6 +467,7 @@ Apollo::Region::~Region()
 {
 #ifdef PERF_CNTR_MODE
     if(this->papiPerfCnt){
+        //fprintf(stderr, "stopping papicntrs for region [%s]\n", this->name);
         delete this->papiPerfCnt;
     }
 #endif
@@ -525,42 +535,23 @@ void Apollo::Region::collectContext(Apollo::RegionContext *context,
 
     // The counters were run, this was the first time we saw this user-supplied
     // feature vector. Thus, we should save it to the feature-counter mapping
-    // along with not adding the measure to the region measures due to the
-    // slight execution time overhead PAPI adds.
+    // along with adding the measure to the region measures.
 
       // First calculate the sum of each counter
       // These summary statistics are calculated across threads, so we
       // always have the same feature dimensions irregardless of thread count
       std::vector<float> vals = this->papiPerfCnt->getSummaryStats();
 
-      // Clear the PapiCounters counter values
-      this->papiPerfCnt->clearAllCntrValues();
-
       // Map the user-provided features to the counter values
       this->feats_to_cntr_vals[context->features] = vals;
 
-      // Store these features for use after Region->end() call finishes
-      // and the context gets deleted (so we lose our context->features vector)
-      // this->lastFeats = context->features;
+      // Set the current context features to these new values
+      // so that we collect the timing measure and write it to
+      // the trace file
+      context->features = vals;
   }
-    else{
+#endif
 
-    measures.push_back(
-        std::make_tuple(context->features, context->policy, metric));
-
-    if (Config::APOLLO_TRACE_CSV) {
-      trace_file << apollo->mpiRank << " ";
-      trace_file << model->name << " ";
-      trace_file << this->name << " ";
-      trace_file << context->idx << " ";
-      for (auto &f : context->features)
-        trace_file << f << " ";
-      trace_file << context->policy << " ";
-      trace_file << metric << "\n";
-    }
-  } 
-
-#else
   measures.push_back(
       std::make_tuple(context->features, context->policy, metric));
 
@@ -568,13 +559,13 @@ void Apollo::Region::collectContext(Apollo::RegionContext *context,
     trace_file << apollo->mpiRank << " ";
     trace_file << model->name << " ";
     trace_file << this->name << " ";
-    trace_file << context->idx << " ";
+    trace_file << context->idx << " "
+    trace_file << apollo->region_executions << " ";
     for (auto &f : context->features)
       trace_file << f << " ";
     trace_file << context->policy << " ";
     trace_file << metric << "\n";
   }
-#endif
 
   apollo->region_executions++;
 
