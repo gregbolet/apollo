@@ -30,6 +30,7 @@ public:
   Region(const int num_features,
          const char *regionName,
          int numAvailablePolicies,
+         int min_training_data = 0,
          const std::string &model_info = "",
          const std::string &modelYamlFile = "");
   ~Region();
@@ -63,7 +64,7 @@ public:
   std::unique_ptr<PolicyModel> model;
 
   void collectPendingContexts();
-  void train(int step);
+  void train(int step, bool doCollectPendingContexts = true);
 
   void parsePolicyModel(const std::string &model_info);
   // Model information, name and params.
@@ -95,6 +96,10 @@ private:
   Apollo::PapiCounters *papiPerfCnt;
   std::vector<Apollo::RegionContext *> pending_contexts;
   void collectContext(Apollo::RegionContext *, double);
+
+  void autoTrain();
+
+  int min_training_data;
 };  // end: Apollo::Region
 
 struct Apollo::RegionContext {
