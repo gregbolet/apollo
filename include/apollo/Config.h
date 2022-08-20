@@ -34,7 +34,8 @@ public:
   static std::string APOLLO_TRACES_DIR;
   static std::string APOLLO_MODELS_DIR;
 
-  static int APOLLO_DTREE_DEPTH;
+  static int APOLLO_MIN_TRAINING_DATA;
+  //static int APOLLO_DTREE_DEPTH;
   static int APOLLO_ENABLE_PERF_CNTRS;
   static int APOLLO_PERF_CNTRS_MLTPX;
   static std::vector<std::string> APOLLO_PERF_CNTRS;

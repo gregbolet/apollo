@@ -114,20 +114,20 @@ void Apollo::Region::train(int step, bool doCollectPendingContexts, bool force)
 
 int Apollo::Region::getPolicyIndex(Apollo::RegionContext *context)
 {
-#ifdef PERF_CNTR_MODE
-    int choice;
-
-    // If we're using a static policy, we can't use the 0 default policy
-    if(model_name == "Static"){
-      choice = model->getIndex(context->features);      
-    }
-    else{
-      // If we're measuring perf cntrs, use the default policy
-      choice = (this->shouldRunCounters) ? 0 : model->getIndex(context->features);
-    }
-#else
-    int choice = model->getIndex( context->features );
-#endif
+//#ifdef PERF_CNTR_MODE
+//    int choice;
+//
+//    // If we're using a static policy, we can't use the 0 default policy
+//    if(model_name == "Static"){
+//      choice = model->getIndex(context->features);      
+//    }
+//    else{
+//      // If we're measuring perf cntrs, use the default policy
+//      choice = (this->shouldRunCounters) ? 0 : model->getIndex(context->features);
+//    }
+//#else
+  int choice = model->getIndex( context->features );
+//#endif
 
   if (Config::APOLLO_TRACE_POLICY) {
     std::stringstream trace_out;
@@ -178,12 +178,14 @@ void Apollo::Region::parsePolicyModel(const std::string &model_info)
     params_regex.push_back("(explore)=(RoundRobin|Random)");
     params_regex.push_back("(load)");
     params_regex.push_back("(load-dataset)");
+    params_regex.push_back("(load-dataset)=([a-zA-Z0-9_\\-\\.]+)");
     params_regex.push_back("(load)=([a-zA-Z0-9_\\-\\.]+)");
   } else if (model_name == "RandomForest") {
     params_regex.push_back("(num_trees|max_depth)=([0-9]+)");
     params_regex.push_back("(explore)=(RoundRobin|Random)");
     params_regex.push_back("(load)");
     params_regex.push_back("(load-dataset)");
+    params_regex.push_back("(load-dataset)=([a-zA-Z0-9_\\-\\.]+)");
     params_regex.push_back("(load)=([a-zA-Z0-9_\\-\\.]+)");
   } else if (model_name == "PolicyNet") {
     params_regex.push_back(
@@ -192,6 +194,7 @@ void Apollo::Region::parsePolicyModel(const std::string &model_info)
     params_regex.push_back("(load)");
     params_regex.push_back("(load)=([a-zA-Z0-9_\\-\\.]+)");
     params_regex.push_back("(load-dataset)");
+    params_regex.push_back("(load-dataset)=([a-zA-Z0-9_\\-\\.]+)");
   }
 
   std::string model_params_str = model_info.substr(pos + 1);
@@ -224,16 +227,23 @@ void Apollo::Region::parsePolicyModel(const std::string &model_info)
 Apollo::Region::Region(const int num_features,
                        const char *regionName,
                        int num_policies,
-                       int min_training_data,
+                       int _min_training_data,
                        const std::string &_model_info,
                        const std::string &modelYamlFile)
     : num_features(num_features),
       num_policies(num_policies),
-      min_training_data(min_training_data),
       model_info(_model_info),
       current_context(nullptr),
       idx(0)
 {
+
+  if(Config::APOLLO_MIN_TRAINING_DATA){
+    this->min_training_data = Config::APOLLO_MIN_TRAINING_DATA;
+  }
+  else{
+    this->min_training_data = _min_training_data;
+  }
+
   apollo = Apollo::instance();
 
   strncpy(name, regionName, sizeof(name) - 1);
@@ -266,6 +276,19 @@ Apollo::Region::Region(const int num_features,
                                           apollo->num_events,
                                           num_policies,
                                           model_params);
+
+//#ifdef PAPI_ZERO_VECTOR
+    // setup our zero vector to pass to model->getIndex(...) when
+    // we run with PA
+    this->zero_vector = std::vector<float>(apollo->num_events, 0);
+
+    // let's add the 0 vector to the dataset for this region
+    // this is so that in case any training is done, we have 
+    // the 0 vector available to make predictions for PA
+    // We insert it mapping to policy 0 and with an xtime of 0
+    this->dataset.insert(this->zero_vector, 0, 0);
+//#endif
+
     }
     else{
   model = ModelFactory::createPolicyModel(model_name,
@@ -316,9 +339,15 @@ Apollo::Region::Region(const int num_features,
   }
 
   if (model_params.count("load-dataset")) {
-    std::string dataset_file = Config::APOLLO_OUTPUT_DIR + "/" +
+    std::string dataset_file;
+    if (model_params["load-dataset"].empty()){
+      dataset_file = Config::APOLLO_OUTPUT_DIR + "/" +
                                Config::APOLLO_DATASETS_DIR + "/Dataset-" +
                                std::string(name) + ".yaml";
+    }
+    else{
+      dataset_file = model_params["load-dataset"];
+    }
     std::ifstream ifs(dataset_file);
     if (!ifs) {
       std::cerr << "ERROR: could not load dataset file " << dataset_file
@@ -327,6 +356,8 @@ Apollo::Region::Region(const int num_features,
     }
 
     dataset.load(ifs);
+
+    //std::cout << "creating region from dataset file " << dataset_file << std::endl;
 
     // Train with whatever data existing in the dataset, ignore
     // min_training_data (if set).
@@ -466,6 +497,17 @@ Apollo::RegionContext *Apollo::Region::begin(std::vector<float> &features)
             features = this->feats_to_cntr_vals[features];
             //this->lastFeats = context->features;
         }
+//#ifdef PAPI_ZERO_VECTOR
+        else{
+          // set the feature vector to the 0 vector to query the given model
+          // case Static model: getPolicy() will return static policy
+          // case RoundRobin training: getPolicy() will return next RR policy
+          // case DTree model: getPolicy() will return 0 policy
+          this->features_backup = features;
+          features = this->zero_vector;
+        }
+//#endif
+
     }
 #endif
 
@@ -486,8 +528,14 @@ void Apollo::Region::autoTrain()
   } else if (Config::APOLLO_PER_REGION_TRAIN_PERIOD &&
              (idx % Config::APOLLO_PER_REGION_TRAIN_PERIOD) == 0) {
     train(idx, /* doCollectPendingContexts */ false);
-  } else if (0 < min_training_data && min_training_data <= dataset.size())
-    train(idx, /* doCollectPendingContexts */ false);
+  } else if (0 < min_training_data && min_training_data <= dataset.size()){
+    if(Config::APOLLO_SINGLE_MODEL){
+      apollo->train(idx, /* doCollectPendingContexts */ false);
+    }
+    else{
+      train(idx, /* doCollectPendingContexts */ false);
+    }
+  }
 }
 
 void Apollo::Region::collectContext(Apollo::RegionContext *context,
@@ -506,8 +554,17 @@ void Apollo::Region::collectContext(Apollo::RegionContext *context,
       // always have the same feature dimensions irregardless of thread count
       std::vector<float> vals = this->papiPerfCnt->getSummaryStats();
 
+      // if we ran the counters, we set the context->features to be the 0 vector
+      // so we need to grab the backup-up features and map them to the 
+      // counter values
+
       // Map the user-provided features to the counter values
-      this->feats_to_cntr_vals[context->features] = vals;
+      //this->feats_to_cntr_vals[context->features] = vals;
+//#ifdef PAPI_ZERO_VECTOR
+      this->feats_to_cntr_vals[this->features_backup] = vals;
+//#else
+//      this->feats_to_cntr_vals[context->features] = vals;
+//#endif
 
       // Set the current context features to these new values
       // so that we collect the timing measure and write it to
@@ -522,7 +579,7 @@ void Apollo::Region::collectContext(Apollo::RegionContext *context,
     trace_file << apollo->mpiRank << " ";
     trace_file << model->name << " ";
     trace_file << this->name << " ";
-    trace_file << context->idx << " "
+    trace_file << context->idx << " ";
     trace_file << apollo->region_executions << " ";
     for (auto &f : context->features)
       trace_file << f << " ";
@@ -597,9 +654,7 @@ void Apollo::Region::setFeature(Apollo::RegionContext *context, float value)
   // If so, we should just not run the counter code
   // as we know the counter values already since they're policy-independent
   if (this->papiPerfCnt && context->features.size() == this->num_features) {
-    this->shouldRunCounters =
-        (this->feats_to_cntr_vals.find(context->features) ==
-         this->feats_to_cntr_vals.end());
+    this->shouldRunCounters = (this->feats_to_cntr_vals.find(context->features) == this->feats_to_cntr_vals.end());
 
     // If we already have run the counters, then translate the passed-in
     // feature vector so we can properly getPolicyIndex() if a tree has
@@ -607,7 +662,18 @@ void Apollo::Region::setFeature(Apollo::RegionContext *context, float value)
     if (!this->shouldRunCounters) {
       context->features = this->feats_to_cntr_vals[context->features];
     }
+    // If we are going to run the counters, we need to make sure
+    // we backup the original code-based features and we set the code
+    // to execute with the 0 policy by passing the model the 0 vector;
+    //
+    else{
+      this->features_backup = context->features;
+      context->features = this->zero_vector;
+    }
   }
+
+  // Start the timer now so as to not capture a map search in it
+  context->timer->start();
 #endif
 
   return;

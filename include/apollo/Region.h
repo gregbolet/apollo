@@ -84,6 +84,8 @@ public:
     }
   };
   std::map<std::vector<float>, std::vector<float>> feats_to_cntr_vals;
+  std::vector<float> zero_vector;
+  std::vector<float> features_backup;
   int shouldRunCounters;
   // PAPI_PERF_CNTRS end
 

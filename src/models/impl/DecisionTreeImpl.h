@@ -17,6 +17,7 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+#include <memory>
 
 #include "helpers/OutputFormatter.h"
 #include "helpers/Parser.h"

@@ -6,7 +6,7 @@
 
 #LLVM_INSTALL=/g/g15/bolet1/workspace/clang-apollo/llvm-project/build-release-quartz/install
 
-export CXXFLAGS="-fopenmp" 
+export CXXFLAGS="-fopenmp -O3 -std=c++14" 
 export LDFLAGS="-Wl,--rpath,${LLVM_INSTALL}/lib"
 
 #cd ./build
