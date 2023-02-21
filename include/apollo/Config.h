@@ -38,6 +38,7 @@ public:
   //static int APOLLO_DTREE_DEPTH;
   static int APOLLO_ENABLE_PERF_CNTRS;
   static int APOLLO_PERF_CNTRS_MLTPX;
+  static int APOLLO_PERF_CNTRS_SAMPLE_EACH_ITER;
   static std::vector<std::string> APOLLO_PERF_CNTRS;
   static std::string APOLLO_SINGLE_MODEL_TO_LOAD;
 
