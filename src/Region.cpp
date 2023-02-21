@@ -178,14 +178,16 @@ void Apollo::Region::parsePolicyModel(const std::string &model_info)
     params_regex.push_back("(explore)=(RoundRobin|Random)");
     params_regex.push_back("(load)");
     params_regex.push_back("(load-dataset)");
-    params_regex.push_back("(load-dataset)=([a-zA-Z0-9_\\-\\.]+)");
+    //params_regex.push_back("(load-dataset)=([a-zA-Z0-9_\\-\\.]+)");
+    params_regex.push_back("(load-dataset)=([a-zA-Z0-9_\\-\\.\\/]+)");
     params_regex.push_back("(load)=([a-zA-Z0-9_\\-\\.]+)");
   } else if (model_name == "RandomForest") {
     params_regex.push_back("(num_trees|max_depth)=([0-9]+)");
     params_regex.push_back("(explore)=(RoundRobin|Random)");
     params_regex.push_back("(load)");
     params_regex.push_back("(load-dataset)");
-    params_regex.push_back("(load-dataset)=([a-zA-Z0-9_\\-\\.]+)");
+    //params_regex.push_back("(load-dataset)=([a-zA-Z0-9_\\-\\.]+)");
+    params_regex.push_back("(load-dataset)=([a-zA-Z0-9_\\-\\.\\/]+)");
     params_regex.push_back("(load)=([a-zA-Z0-9_\\-\\.]+)");
   } else if (model_name == "PolicyNet") {
     params_regex.push_back(
@@ -194,7 +196,8 @@ void Apollo::Region::parsePolicyModel(const std::string &model_info)
     params_regex.push_back("(load)");
     params_regex.push_back("(load)=([a-zA-Z0-9_\\-\\.]+)");
     params_regex.push_back("(load-dataset)");
-    params_regex.push_back("(load-dataset)=([a-zA-Z0-9_\\-\\.]+)");
+    //params_regex.push_back("(load-dataset)=([a-zA-Z0-9_\\-\\.]+)");
+    params_regex.push_back("(load-dataset)=([a-zA-Z0-9_\\-\\.\\/]+)");
   }
 
   std::string model_params_str = model_info.substr(pos + 1);
@@ -378,6 +381,8 @@ Apollo::Region::Region(const int num_features,
   }
 
   if (Config::APOLLO_TRACE_CSV) {
+    // let's remove any slashes from the model_info (as a load-dataset might have a filepath in it)
+    std::replace(model_info.begin(), model_info.end(), '/', '+');
     std::string fname(Config::APOLLO_OUTPUT_DIR + "/" +
                       Config::APOLLO_TRACES_DIR + "/trace-" + model_info +
                       "-region-" + name + "-rank-" +
@@ -487,25 +492,29 @@ Apollo::RegionContext *Apollo::Region::begin(std::vector<float> &features)
     // If so, we should just not run the counter code
     // as we know the counter values already since they're policy-independent
     if(this->papiPerfCnt){
+      if (Config::APOLLO_PERF_CNTRS_SAMPLE_EACH_ITER){
+        this->shouldRunCounters = 1;
+      }
+      else{
         this->shouldRunCounters = (this->feats_to_cntr_vals.find(features) == this->feats_to_cntr_vals.end());
-        //this->shouldRunCounters = !(this->feats_to_cntr_vals.contains(context->features));
+      }
 
-        // If we already have run the counters, then translate the passed-in
-        // feature vector so we can properly getPolicyIndex() if a tree has
-        // already been trained
-        if(!this->shouldRunCounters){
-            features = this->feats_to_cntr_vals[features];
-            //this->lastFeats = context->features;
-        }
-//#ifdef PAPI_ZERO_VECTOR
-        else{
-          // set the feature vector to the 0 vector to query the given model
-          // case Static model: getPolicy() will return static policy
-          // case RoundRobin training: getPolicy() will return next RR policy
-          // case DTree model: getPolicy() will return 0 policy
-          this->features_backup = features;
-          features = this->zero_vector;
-        }
+      // If we already have run the counters, then translate the passed-in
+      // feature vector so we can properly getPolicyIndex() if a tree has
+      // already been trained
+      if(!this->shouldRunCounters){
+          features = this->feats_to_cntr_vals[features];
+          //this->lastFeats = context->features;
+      }
+//#ifde PAPI_ZERO_VECTOR
+      else{
+        // set the feature vector to the 0 vector to query the given model
+        // case Static model: getPolicy() will return static policy
+        // case RoundRobin training: getPolicy() will return next RR policy
+        // case DTree model: getPolicy() will return 0 policy
+        this->features_backup = features;
+        features = this->zero_vector;
+      }
 //#endif
 
     }
@@ -654,7 +663,12 @@ void Apollo::Region::setFeature(Apollo::RegionContext *context, float value)
   // If so, we should just not run the counter code
   // as we know the counter values already since they're policy-independent
   if (this->papiPerfCnt && context->features.size() == this->num_features) {
-    this->shouldRunCounters = (this->feats_to_cntr_vals.find(context->features) == this->feats_to_cntr_vals.end());
+    if (Config::APOLLO_PERF_CNTRS_SAMPLE_EACH_ITER){
+      this->shouldRunCounters = 1;
+    }
+    else{
+      this->shouldRunCounters = (this->feats_to_cntr_vals.find(context->features) == this->feats_to_cntr_vals.end());
+    }
 
     // If we already have run the counters, then translate the passed-in
     // feature vector so we can properly getPolicyIndex() if a tree has

@@ -29,6 +29,7 @@ int Config::APOLLO_MIN_TRAINING_DATA;
 #ifdef PERF_CNTR_MODE
     int Config::APOLLO_ENABLE_PERF_CNTRS;
     int Config::APOLLO_PERF_CNTRS_MLTPX;
+    int Config::APOLLO_PERF_CNTRS_SAMPLE_EACH_ITER;
     
     std::vector<std::string> Config::APOLLO_PERF_CNTRS;
 #endif

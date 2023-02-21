@@ -184,6 +184,7 @@ Apollo::Apollo()
 
 #ifdef PERF_CNTR_MODE
     Config::APOLLO_ENABLE_PERF_CNTRS = std::stoi( apolloUtils::safeGetEnv( "APOLLO_ENABLE_PERF_CNTRS", "0" ) );
+    Config::APOLLO_PERF_CNTRS_SAMPLE_EACH_ITER = std::stoi( apolloUtils::safeGetEnv( "APOLLO_PERF_CNTRS_SAMPLE_EACH_ITER", "0" ) );
     Config::APOLLO_PERF_CNTRS_MLTPX = std::stoi( apolloUtils::safeGetEnv( "APOLLO_PERF_CNTRS_MLTPX", "1" ) );
 
     std::string PERF_CNTRS = apolloUtils::safeGetEnv( "APOLLO_PERF_CNTRS", "PAPI_DP_OPS,PAPI_SP_OPS" );
