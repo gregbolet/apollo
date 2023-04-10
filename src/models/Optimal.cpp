@@ -15,8 +15,13 @@ Optimal::Optimal(std::string file) : PolicyModel(0, "Optimal")
   std::ifstream infile(file);
   std::string policy_str;
 
-  while (std::getline(infile, policy_str, ','))
-    optimal_policy.push_back(std::stoi(policy_str));
+  //while (std::getline(infile, policy_str, ','))
+  //  optimal_policy.push_back(std::stoi(policy_str));
+
+  // get just the first element and put it in the queue
+  std::getline(infile, policy_str, ',');
+  optimal_policy.push_back(std::stoi(policy_str));
+
 
   infile.close();
 }
@@ -31,7 +36,8 @@ int Optimal::getIndex(std::vector<float> &features)
   }
 
   int policy = optimal_policy.front();
-  optimal_policy.pop_front();
+  // don't remove the front element
+  //optimal_policy.pop_front();
   return policy;
 }
 
@@ -40,8 +46,13 @@ void Optimal::load(const std::string &filename)
   std::ifstream infile(filename);
   std::string policy_str;
 
-  while (std::getline(infile, policy_str, ','))
-    optimal_policy.push_back(std::stoi(policy_str));
+  
+  //while (std::getline(infile, policy_str, ','))
+  //  optimal_policy.push_back(std::stoi(policy_str));
+  
+
+  std::getline(infile, policy_str, ',');
+  optimal_policy.push_back(std::stoi(policy_str));
 
   infile.close();
 }

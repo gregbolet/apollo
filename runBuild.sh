@@ -1,16 +1,6 @@
 #!/bin/bash
 
-#module load clang/12.0.0
-#export CC=$(which clang)
-#export CXX=$(which clang++)
-
-#LLVM_INSTALL=/g/g15/bolet1/workspace/clang-apollo/llvm-project/build-release-quartz/install
-
-export CXXFLAGS="-fopenmp -O3 -std=c++14" 
-export LDFLAGS="-Wl,--rpath,${LLVM_INSTALL}/lib"
-
-#cd ./build
-cmake   -DENABLE_MPI=OFF \
+cmake -DENABLE_MPI=OFF \
  	-DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_INSTALL_PREFIX=./install \
   -DCMAKE_CXX_COMPILER=${LLVM_INSTALL}/bin/clang++ \
@@ -18,6 +8,7 @@ cmake   -DENABLE_MPI=OFF \
 	-DENABLE_PERF_CNTRS=ON \
 	-DBUILD_SHARED_LIBS=ON \
 	-DPAPI_DIR=${PAPI_PATH} \
+  -DCMAKE_EXE_LINKER_FLAGS="-L ${LLVM_INSTALL}/lib -Wl,--rpath,${LLVM_INSTALL}/lib" \
 	../
 
 # -DPAPI_DIR=/usr/WS2/bolet1/spack/opt/spack/linux-rhel7-broadwell/gcc-10.2.1/papi-6.0.0.1-42m6tpjegu2j7hxrz26ii5t23jcmtmca \

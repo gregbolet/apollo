@@ -33,6 +33,7 @@ public:
   static std::string APOLLO_DATASETS_DIR;
   static std::string APOLLO_TRACES_DIR;
   static std::string APOLLO_MODELS_DIR;
+  static std::string APOLLO_OPTIM_READ_DIR;
 
   static int APOLLO_MIN_TRAINING_DATA;
   //static int APOLLO_DTREE_DEPTH;

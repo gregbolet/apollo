@@ -369,7 +369,8 @@ Apollo::Region::Region(const int num_features,
   }
 
   if (model_name == "Optimal") {
-    std::string model_file = "opt-" + std::string(name) + "-rank-" +
+    std::string model_file = Config::APOLLO_OPTIM_READ_DIR + "/" + 
+                             "opt-" + std::string(name) + "-rank-" +
                              std::to_string(apollo->mpiRank) + ".txt";
     if (!fileExists(model_file)) {
       std::cerr << "Optimal policy file " << model_file << " does not exist"

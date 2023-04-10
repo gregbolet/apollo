@@ -38,3 +38,4 @@ std::string Config::APOLLO_OUTPUT_DIR;
 std::string Config::APOLLO_DATASETS_DIR;
 std::string Config::APOLLO_TRACES_DIR;
 std::string Config::APOLLO_MODELS_DIR;
+std::string Config::APOLLO_OPTIM_READ_DIR;

@@ -179,6 +179,8 @@ Apollo::Apollo()
       apolloUtils::safeGetEnv("APOLLO_TRACES_DIR", "traces");
   Config::APOLLO_MODELS_DIR =
       apolloUtils::safeGetEnv("APOLLO_MODELS_DIR", "models");
+  Config::APOLLO_OPTIM_READ_DIR =
+      apolloUtils::safeGetEnv("APOLLO_OPTIM_READ_DIR", ".");
   Config::APOLLO_MIN_TRAINING_DATA =
       std::stoi(apolloUtils::safeGetEnv("APOLLO_MIN_TRAINING_DATA", "0"));
 
