@@ -163,6 +163,19 @@ static void validate(const std::string &model_name,
 
     return;
   }
+  
+  if (model_name == "BayesianOptim") {
+    // "(kernel)=(TBD)"
+    // "(acqui)=(TBD)"
+    // "(load)"
+    // "(load-dataset)"
+    // "(load)=([a-zA-Z0-9_\\-\\.]+)"
+    for (auto &entry : model_params)
+      if (entry.first != "kernel" && entry.first != "acqui" && entry.first != "load" && entry.first != "load-dataset")
+        fatal_error("Unknown param key \"" + entry.first + "\" for policy BayesianOptim");
+
+    return;
+  }
 
   if (model_name == "DecisionTree") {
     // "(max_depth)=([0-9]+)"

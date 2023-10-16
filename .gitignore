@@ -1,4 +1,5 @@
 .DS_Store
+build-*
 build
 install
 data
@@ -19,3 +20,5 @@ GTAGS
 GPATH
 GRTAGS
 tags
+*.dot
+*.yaml

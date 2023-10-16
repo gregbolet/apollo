@@ -14,6 +14,9 @@
 #include "apollo/models/RandomForest.h"
 #include "apollo/models/RoundRobin.h"
 #include "apollo/models/Static.h"
+#ifdef ENABLE_BO
+#include "apollo/models/BayesianOptim.h"
+#endif
 #ifdef ENABLE_OPENCV
 #include "apollo/models/RegressionTree.h"
 #endif
@@ -66,6 +69,8 @@ std::unique_ptr<PolicyModel> ModelFactory::createPolicyModel(
       policy = 0;
     }
     return std::make_unique<Static>(num_policies, policy);
+  } else if (model_name == "BayesianOptim") {
+    return std::make_unique<BayesianOptim>(num_policies, num_features);
   } else if (model_name == "DatasetMap") {
     return std::make_unique<DatasetMap>(num_policies);
   } else if (model_name == "Random") {

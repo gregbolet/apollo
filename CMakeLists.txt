@@ -16,6 +16,7 @@ set(CMAKE_CXX_STANDARD 14)
 #
 # Options
 #
+option(ENABLE_BO "Enable Bayesian Optimization (BO) model -- Requires Limbo, NLOPT, and Eigen" OFF)
 option(ENABLE_MPI "Require and enable MPI for collective training" OFF)
 option(ENABLE_OpenCV "Require and enable OpenCV for ML models" OFF)
 option(ENABLE_JIT_DTREE "Enable JIT generated DecisionTree eval functions (supported only by Apollo implementation)" OFF)
@@ -112,6 +113,7 @@ install(FILES ${PROJECT_BINARY_DIR}/apollo.pc
 #
 # External libraries
 #
+
 if(ENABLE_MPI)
   find_package(MPI REQUIRED)
   add_definitions(-DENABLE_MPI)

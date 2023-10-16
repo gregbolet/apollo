@@ -40,6 +40,13 @@ set(APOLLO_SOURCES
     timers/TimerSync.cpp
 )
 
+if(ENABLE_BO)
+    list(APPEND APOLLO_SOURCES
+        models/BayesianOptim.cpp
+    )
+    add_definitions(-DENABLE_BO)
+endif()
+
 if(ENABLE_OPENCV)
     list(APPEND APOLLO_SOURCES
         models/RegressionTree.cpp
@@ -64,6 +71,7 @@ else()
     add_library(apollo STATIC ${APOLLO_SOURCES})
 endif()
 
+
 if(ENABLE_MPI)
     target_link_libraries(apollo PUBLIC MPI::MPI_CXX)
 endif()
@@ -82,3 +90,33 @@ install(TARGETS apollo
     EXPORT apollo
     ARCHIVE DESTINATION lib
     LIBRARY DESTINATION lib)
+
+
+
+
+
+
+if(ENABLE_BO)
+  if(LIMBO_DIR)
+    add_library(limbo STATIC IMPORTED)
+    set_target_properties(limbo PROPERTIES
+      IMPORTED_LOCATION "${LIMBO_DIR}/build/src/liblimbo.a"
+      INTERFACE_INCLUDE_DIRECTORIES "${LIMBO_DIR}/src"
+    )
+  endif()
+
+  if(NLOPT_DIR)
+    add_definitions(-DUSE_NLOPT)
+    add_library(nlopt SHARED IMPORTED)
+    set_target_properties(nlopt PROPERTIES
+      IMPORTED_LOCATION "${NLOPT_DIR}/lib64/libnlopt.so"
+      INTERFACE_INCLUDE_DIRECTORIES "${NLOPT_DIR}/include"
+    )
+  endif()
+
+  if(EIGEN_DIR)
+    include_directories(${EIGEN_DIR}/include/eigen3)
+  endif()
+
+  target_link_libraries(apollo limbo nlopt boost_system boost_filesystem)
+endif()

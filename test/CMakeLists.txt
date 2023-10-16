@@ -17,3 +17,8 @@ if (ENABLE_MPI)
     add_executable(apollo-test-mpi apollo-test-mpi.cpp)
     target_link_libraries(apollo-test-mpi apollo)
 endif()
+
+if (ENABLE_BO)
+    add_executable(apollo-test-bo apollo-test-bo.cpp)
+    target_link_libraries(apollo-test-bo apollo)
+endif()
