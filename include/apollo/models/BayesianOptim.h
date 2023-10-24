@@ -12,6 +12,9 @@
 
 #include <limbo/limbo.hpp>
 
+// for boost::any usasge
+#include <boost/any.hpp>
+
 using namespace limbo;
 
 struct Params {
@@ -20,27 +23,72 @@ struct Params {
 #else
     struct opt_gridsearch : public defaults::opt_gridsearch {};
 #endif
-    struct bayes_opt_boptimizer : public defaults::bayes_opt_boptimizer {};
+    // This does no GP hyperparameter optimization with -1
+    struct bayes_opt_boptimizer : public defaults::bayes_opt_boptimizer {
+        BO_PARAM(int, hp_period, -1);
+    };
     struct bayes_opt_bobase : public defaults::bayes_opt_bobase {
-        BO_PARAM(int, stats_enabled, true);
-        BO_PARAM(bool, bounded, true);
+        BO_DYN_PARAM(int, stats_enabled);
+        BO_DYN_PARAM(bool, bounded);
     };
     struct stop_maxiterations { BO_DYN_PARAM(int, iterations); };
     //struct stop_mintolerance { BO_PARAM(double, tolerance, -0.1); };
-    struct acqui_ei { BO_PARAM(double, jitter, 0.0); };
+    struct acqui_ei : public defaults::acqui_ei { BO_DYN_PARAM(double, jitter); };
+    struct acqui_ucb : public defaults::acqui_ucb { BO_DYN_PARAM(double, alpha); };
+    //struct acqui_gpucb : public defaults::acqui_gpucb { BO_DYN_PARAM(double, delta); };
+    struct acqui_gpucb : public defaults::acqui_gpucb { BO_PARAM(double, delta, 0.1); };
     //struct init_randomsampling { BO_PARAM(int, samples, 0); };
-    struct kernel : public defaults::kernel { BO_PARAM(double, noise, 1e-10); };
-    //struct kernel_squared_exp_ard : public defaults::kernel_squared_exp_ard {};
-    struct kernel_maternthreehalves : public defaults::kernel_maternthreehalves {};
+    struct kernel : public defaults::kernel { 
+        BO_DYN_PARAM(double, noise); 
+        BO_DYN_PARAM(bool, optimize_noise); 
+    };
+    struct kernel_squared_exp_ard : public defaults::kernel_squared_exp_ard {
+        BO_DYN_PARAM(double, sigma_sq);
+        BO_DYN_PARAM(int, k);
+    };
+    struct kernel_maternthreehalves : public defaults::kernel_maternthreehalves {
+        BO_DYN_PARAM(double, sigma_sq);
+        BO_DYN_PARAM(double, l);
+    };
+    struct kernel_maternfivehalves : public defaults::kernel_maternfivehalves {
+        BO_DYN_PARAM(double, sigma_sq);
+        BO_DYN_PARAM(double, l);
+    };
+    struct kernel_exp : public defaults::kernel_exp {
+        BO_DYN_PARAM(double, sigma_sq);
+        BO_DYN_PARAM(double, l);
+    };
     struct opt_rprop : public defaults::opt_rprop {};
 };
 
+// BO_DYN_PARAM makes dim_in a static type, this might not be
+// a good idea for later when we have multiple eval_func instances...
+struct eval_func {
+    BO_DYN_PARAM(size_t, dim_in);
+    BO_PARAM(size_t, dim_out, 1);
 
-//using kernel_t = kernel::SquaredExpARD<Params>;
-using kernel_t = kernel::MaternThreeHalves<Params>;
+    eval_func() {
+        std::cout << "Eval Funciton Init Called" << std::endl;
+    }
+
+    Eigen::VectorXd operator()(const Eigen::VectorXd& x) const
+    {
+        std::cout << "THIS SHOULD NEVER GET CALLED!" << std::endl;
+        return x + Eigen::VectorXd::Ones(x.rows());
+    }
+};
+
+
+//using kernel_t = kernel::Exp<Params>; // AKA: RBF (Radial Basis Function)
+///using kernel_t = kernel::SquaredExpARD<Params>;
+//using kernel_t = kernel::MaternThreeHalves<Params>;
+//using kernel_t = kernel::MaternFiveHalves<Params>;
+///using gp_t = model::GP<Params, kernel_t, mean_t>;
+///using acqui_t = acqui::EI<Params, gp_t>;
+//using acqui_t = acqui::UCB<Params, gp_t>;
+//using acqui_t = acqui::GP_UCB<Params, gp_t>;
+
 using mean_t = mean::Data<Params>;
-using gp_t = model::GP<Params, kernel_t, mean_t>;
-using acqui_t = acqui::EI<Params, gp_t>;
 using init_t = init::NoInit<Params>;
 
 using boptimizer_signature = boost::parameter::parameters<boost::parameter::optional<tag::acquiopt>,
@@ -95,8 +143,9 @@ class CustomBOptimizer : public bayes_opt::BOptimizer<Params, A1, A2, A3, A4, A5
             using args = typename boptimizer_signature::bind<A1, A2, A3, A4, A5, A6>::type;
             using acqui_optimizer_t = typename boost::parameter::binding<args, tag::acquiopt, typename defaults::acquiopt_t>::type;
 
-            template <typename StateFunction, typename AggregatorFunction = FirstElem>
-            Eigen::VectorXd getNextPoint(const StateFunction& sfun, const AggregatorFunction& afun = AggregatorFunction(), bool reset=true)
+            //template <typename StateFunction, typename AggregatorFunction = FirstElem>
+            //Eigen::VectorXd getNextPoint(const StateFunction& sfun, const AggregatorFunction& afun = AggregatorFunction(), bool reset=true)
+            Eigen::VectorXd getNextPoint(const eval_func& sfun, const FirstElem& afun = FirstElem(), bool reset=true)
             {
                 if (reset) { this->setSeed(_seed); }
 
@@ -107,7 +156,7 @@ class CustomBOptimizer : public bayes_opt::BOptimizer<Params, A1, A2, A3, A4, A5
                 if (!this->_observations.empty())
                     _model.compute(this->_samples, this->_observations);
                 else
-                    _model = model_t(StateFunction::dim_in(), StateFunction::dim_out());
+                    _model = model_t(eval_func::dim_in(), eval_func::dim_out());
 
                 acqui_optimizer_t acqui_optimizer;
                 
@@ -118,16 +167,17 @@ class CustomBOptimizer : public bayes_opt::BOptimizer<Params, A1, A2, A3, A4, A5
                         [&](const Eigen::VectorXd& x, bool g) { return acqui(x, afun, g); };
 
                     Eigen::VectorXd starting_point;
-                    if(Params::bayes_opt_bobase::bounded()){ starting_point = tools::random_vec(StateFunction::dim_in(), _bound_rng); }
-                                                       else{ starting_point = tools::random_vec(StateFunction::dim_in(), _unbound_rng); }
+                    if(Params::bayes_opt_bobase::bounded()){ starting_point = tools::random_vec(eval_func::dim_in(), _bound_rng); }
+                                                       else{ starting_point = tools::random_vec(eval_func::dim_in(), _unbound_rng); }
                     Eigen::VectorXd new_sample = acqui_optimizer(acqui_optimization, starting_point, Params::bayes_opt_bobase::bounded());
                     return new_sample;
                 }
-                return Eigen::VectorXd(StateFunction::dim_out());
+                return Eigen::VectorXd(eval_func::dim_out());
             }
 
-            template <typename AggregatorFunction = FirstElem>
-            void updateModel(Eigen::VectorXd& sample, Eigen::VectorXd& val, const AggregatorFunction& afun = AggregatorFunction())
+            //template <typename AggregatorFunction = FirstElem>
+            //void updateModel(Eigen::VectorXd& sample, Eigen::VectorXd& val, const AggregatorFunction& afun = AggregatorFunction())
+            void updateModel(Eigen::VectorXd& sample, Eigen::VectorXd& val, const FirstElem& afun = FirstElem())
             {
               // appends the sample and val to _samples and _observations
               this->add_new_sample(sample, val);
@@ -147,10 +197,11 @@ class CustomBOptimizer : public bayes_opt::BOptimizer<Params, A1, A2, A3, A4, A5
 
             void writeGPVizFiles(){
                 // assume a 1D input and 1D output
-                gp_t gp(1,1);
+                // gp_t gp(1,1);
+                model_t gp(1,1);
 
                 // compute the GP from the data
-                gp.compute(this->_samples, this->_observations);
+                gp.compute(this->_samples, this->_observations, true);
 
                 // use the GP to predict 100 points in the target space for plotting
                 // these are 100 equally-spaced points
@@ -199,6 +250,115 @@ class CustomBOptimizer : public bayes_opt::BOptimizer<Params, A1, A2, A3, A4, A5
 };
 
 
+struct CustomBOptimBase{
+    virtual int getNumSamples() = 0;
+    virtual void setSeed(int seed) = 0;
+    virtual void writeGPVizFiles() = 0;
+    virtual void updateModel(Eigen::VectorXd& sample, Eigen::VectorXd& val, const FirstElem& afun) = 0;
+    virtual Eigen::VectorXd getNextPoint(const eval_func& sfun, const FirstElem& afun, bool reset=true) = 0;
+    CustomBOptimBase(){};
+    virtual ~CustomBOptimBase(){};
+};
+
+
+struct BO_SQEXP_EI : CustomBOptimBase{
+    public: 
+        BO_SQEXP_EI(int seed, double sigma_sq, double l, double jitter) : CustomBOptimBase() {
+            std::cout << "setup BO_SQEXP_EI!" << std::endl;
+            MY_BO.setSeed(seed);
+
+            Params::kernel_exp::set_sigma_sq(sigma_sq);
+            Params::kernel_exp::set_l(l);
+            Params::acqui_ei::set_jitter(jitter);
+        }
+        ~BO_SQEXP_EI(){
+            std::cout << "destroying BO_SQEXP_EI!" << std::endl;
+        }
+        int getNumSamples() {return MY_BO.getNumSamples();};
+        void setSeed(int seed) {MY_BO.setSeed(seed);};
+        void writeGPVizFiles(){MY_BO.writeGPVizFiles();};
+        void updateModel(Eigen::VectorXd& sample, Eigen::VectorXd& val, const FirstElem& afun){
+            MY_BO.updateModel(sample, val, afun);
+        };
+        Eigen::VectorXd getNextPoint(const eval_func& sfun, const FirstElem& afun, bool reset=true){
+            return MY_BO.getNextPoint(sfun, afun, reset);
+        };
+    private:
+        #undef kernel_t
+        #undef acqui_t
+        #undef gp_t
+        #define kernel_t kernel::Exp<Params>
+        #define gp_t model::GP<Params, kernel_t, mean_t>
+        #define acqui_t acqui::EI<Params, gp_t>
+        CustomBOptimizer<Params, modelfun<gp_t>, acquifun<acqui_t>, initfun<init_t>> MY_BO;
+};
+
+struct BO_SQEXP_UCB : CustomBOptimBase{
+    public: 
+        BO_SQEXP_UCB(int seed, double sigma_sq, double l, double alpha) : CustomBOptimBase() {
+            std::cout << "setup BO_SQEXP_UCB!" << std::endl;
+            MY_BO.setSeed(seed);
+
+            Params::kernel_exp::set_sigma_sq(sigma_sq);
+            Params::kernel_exp::set_l(l);
+            Params::acqui_ucb::set_alpha(alpha);
+        }
+        ~BO_SQEXP_UCB(){
+            std::cout << "destroying BO_SQEXP_UCB!" << std::endl;
+        }
+        int getNumSamples() {return MY_BO.getNumSamples();};
+        void setSeed(int seed) {MY_BO.setSeed(seed);};
+        void writeGPVizFiles(){MY_BO.writeGPVizFiles();};
+        void updateModel(Eigen::VectorXd& sample, Eigen::VectorXd& val, const FirstElem& afun){
+            MY_BO.updateModel(sample, val, afun);
+        };
+        Eigen::VectorXd getNextPoint(const eval_func& sfun, const FirstElem& afun, bool reset=true){
+            return MY_BO.getNextPoint(sfun, afun, reset);
+        };
+    private:
+        #undef kernel_t
+        #undef acqui_t
+        #undef gp_t
+        #define kernel_t kernel::Exp<Params>
+        #define gp_t model::GP<Params, kernel_t, mean_t>
+        #define acqui_t acqui::UCB<Params, gp_t>
+        CustomBOptimizer<Params, modelfun<gp_t>, acquifun<acqui_t>, initfun<init_t>> MY_BO;
+};
+
+struct BO_SQEXP_GPUCB : CustomBOptimBase{
+    public: 
+        BO_SQEXP_GPUCB(int seed, double sigma_sq, double l, double delta) : CustomBOptimBase() {
+            std::cout << "setup BO_SQEXP_GPUCB!" << std::endl;
+            MY_BO.setSeed(seed);
+
+            Params::kernel_exp::set_sigma_sq(sigma_sq);
+            Params::kernel_exp::set_l(l);
+            // can't set this due to acqui_gpucb constexpr on delta...
+            // might need to redefine acqui_gpucb myself...
+            //Params::acqui_gpucb::set_delta(delta);
+        }
+        ~BO_SQEXP_GPUCB(){
+            std::cout << "destroying BO_SQEXP_GPUCB!" << std::endl;
+        }
+        int getNumSamples() {return MY_BO.getNumSamples();};
+        void setSeed(int seed) {MY_BO.setSeed(seed);};
+        void writeGPVizFiles(){MY_BO.writeGPVizFiles();};
+        void updateModel(Eigen::VectorXd& sample, Eigen::VectorXd& val, const FirstElem& afun){
+            MY_BO.updateModel(sample, val, afun);
+        };
+        Eigen::VectorXd getNextPoint(const eval_func& sfun, const FirstElem& afun, bool reset=true){
+            return MY_BO.getNextPoint(sfun, afun, reset);
+        };
+    private:
+        #undef kernel_t
+        #undef acqui_t
+        #undef gp_t
+        #define kernel_t kernel::Exp<Params>
+        #define gp_t model::GP<Params, kernel_t, mean_t>
+        #define acqui_t acqui::GP_UCB<Params, gp_t>
+        CustomBOptimizer<Params, modelfun<gp_t>, acquifun<acqui_t>, initfun<init_t>> MY_BO;
+};
+
 
 
 
@@ -207,8 +367,16 @@ namespace apollo
 class BayesianOptim : public PolicyModel
 {
 public:
-  BayesianOptim(int num_policies, int num_features);
-  ~BayesianOptim(){boptimizer.writeGPVizFiles();};
+  BayesianOptim(int num_policies, int num_features, 
+                const std::string &kernel = "sqexp", 
+                const std::string &acqui = "gpucb",
+                double acqui_hyper=0.1,
+                double sigma_sq = 1.0,
+                double l = 1.0,
+                int k = 1,
+                double whiteKernel = 1e-10,
+                int seed = 777);
+  ~BayesianOptim();
 
   int getIndex(std::vector<float> &features);
   void load(const std::string &filename){};
@@ -220,7 +388,89 @@ private:
   int policy_choice;
   int num_features;
   int first_execution;
-  CustomBOptimizer<Params, modelfun<gp_t>, acquifun<acqui_t>, initfun<init_t>> boptimizer;
+
+  //template<class A, class B, class C, class D>
+  //CustomBOptimizer<A,B,C,D> boptimizer;
+  //std::shared_ptr<CustomBOptimizer> boptimizer;
+  //boost::any boptimizer;
+  //CustomBOptimizer boptimizer;
+  CustomBOptimBase * boptimizer;
+
+  //void setBOptimizer(CustomBOptimizer<A,B,C,D>* optim);
+
+  // This is really ugly, but I just want something to work for now :(
+  // We prefer having a working prototype, then can clean up later
+
+  #undef kernel_t
+  #undef acqui_t
+  #undef gp_t
+  #define kernel_t kernel::SquaredExpARD<Params>
+  #define gp_t model::GP<Params, kernel_t, mean_t>
+  #define acqui_t acqui::EI<Params, gp_t>
+  CustomBOptimizer<Params, modelfun<gp_t>, acquifun<acqui_t>, initfun<init_t>> bo_SqExpARD_EI;
+  //CustomBOptimizer<Params, modelfun<gp_t>, acquifun<acqui_t>, initfun<init_t>> boptimizer;
+
+  #undef acqui_t
+  #define acqui_t acqui::UCB<Params, gp_t>
+  CustomBOptimizer<Params, modelfun<gp_t>, acquifun<acqui_t>, initfun<init_t>> bo_SqExpARD_UCB;
+
+  #undef acqui_t
+  #define acqui_t acqui::GP_UCB<Params, gp_t>
+  CustomBOptimizer<Params, modelfun<gp_t>, acquifun<acqui_t>, initfun<init_t>> bo_SqExpARD_GPUCB;
+
+
+  #undef kernel_t
+  #undef acqui_t
+  #undef gp_t
+  #define kernel_t kernel::MaternThreeHalves<Params>
+  #define gp_t model::GP<Params, kernel_t, mean_t>
+  #define acqui_t acqui::EI<Params, gp_t>
+  CustomBOptimizer<Params, modelfun<gp_t>, acquifun<acqui_t>, initfun<init_t>> bo_MatThreeHalf_EI;
+
+  #undef acqui_t
+  #define acqui_t acqui::UCB<Params, gp_t>
+  CustomBOptimizer<Params, modelfun<gp_t>, acquifun<acqui_t>, initfun<init_t>> bo_MatThreeHalf_UCB;
+
+  #undef acqui_t
+  #define acqui_t acqui::GP_UCB<Params, gp_t>
+  CustomBOptimizer<Params, modelfun<gp_t>, acquifun<acqui_t>, initfun<init_t>> bo_MatThreeHalf_GPUCB;
+
+
+  #undef kernel_t
+  #undef acqui_t
+  #undef gp_t
+  #define kernel_t kernel::MaternFiveHalves<Params>
+  #define gp_t model::GP<Params, kernel_t, mean_t>
+  #define acqui_t acqui::EI<Params, gp_t>
+  CustomBOptimizer<Params, modelfun<gp_t>, acquifun<acqui_t>, initfun<init_t>> bo_MatFiveHalf_EI;
+
+  #undef acqui_t
+  #define acqui_t acqui::UCB<Params, gp_t>
+  CustomBOptimizer<Params, modelfun<gp_t>, acquifun<acqui_t>, initfun<init_t>> bo_MatFiveHalf_UCB;
+
+  #undef acqui_t
+  #define acqui_t acqui::GP_UCB<Params, gp_t>
+  CustomBOptimizer<Params, modelfun<gp_t>, acquifun<acqui_t>, initfun<init_t>> bo_MatFiveHalf_GPUCB;
+
+
+  #undef kernel_t
+  #undef acqui_t
+  #undef gp_t
+  #define kernel_t kernel::Exp<Params>
+  #define gp_t model::GP<Params, kernel_t, mean_t>
+  #define acqui_t acqui::EI<Params, gp_t>
+  CustomBOptimizer<Params, modelfun<gp_t>, acquifun<acqui_t>, initfun<init_t>> bo_SqExp_EI;
+
+  #undef acqui_t
+  #define acqui_t acqui::UCB<Params, gp_t>
+  CustomBOptimizer<Params, modelfun<gp_t>, acquifun<acqui_t>, initfun<init_t>> bo_SqExp_UCB;
+
+  #undef acqui_t
+  #define acqui_t acqui::GP_UCB<Params, gp_t>
+  CustomBOptimizer<Params, modelfun<gp_t>, acquifun<acqui_t>, initfun<init_t>> bo_SqExp_GPUCB;
+
+
+  //CustomBOptimizer<Params, modelfun< model::GP<Params, kernel_t, mean_t>>, acquifun<acqui::EI<Params, model::GP<Params, kernel_t, mean_t>>> >
   Eigen::VectorXd last_point;
 
 };  

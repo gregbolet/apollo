@@ -14,29 +14,39 @@
 // for the acquisition function. We use the default FirstElem()
 // which is just the identity function.
 
-struct eval_func {
-    BO_DYN_PARAM(size_t, dim_in);
-    BO_PARAM(size_t, dim_out, 1);
-
-    eval_func() {
-        std::cout << "Eval Funciton Init Called" << std::endl;
-    }
-
-    Eigen::VectorXd operator()(const Eigen::VectorXd& x) const
-    {
-        std::cout << "THIS SHOULD NEVER GET CALLED!" << std::endl;
-        return x + Eigen::VectorXd::Ones(x.rows());
-    }
-};
-
 BO_DECLARE_DYN_PARAM(size_t, eval_func, dim_in);
 BO_DECLARE_DYN_PARAM(int, Params::stop_maxiterations, iterations);
+
+BO_DECLARE_DYN_PARAM(bool, Params::bayes_opt_bobase, bounded);
+BO_DECLARE_DYN_PARAM(int, Params::bayes_opt_bobase, stats_enabled);
+
+BO_DECLARE_DYN_PARAM(double, Params::kernel_squared_exp_ard, sigma_sq);
+BO_DECLARE_DYN_PARAM(double, Params::kernel_maternthreehalves, sigma_sq);
+BO_DECLARE_DYN_PARAM(double, Params::kernel_maternfivehalves, sigma_sq);
+BO_DECLARE_DYN_PARAM(double, Params::kernel_exp, sigma_sq);
+
+BO_DECLARE_DYN_PARAM(int, Params::kernel_squared_exp_ard, k);
+BO_DECLARE_DYN_PARAM(double, Params::kernel_maternthreehalves, l);
+BO_DECLARE_DYN_PARAM(double, Params::kernel_maternfivehalves, l);
+BO_DECLARE_DYN_PARAM(double, Params::kernel_exp, l);
+
+BO_DECLARE_DYN_PARAM(double, Params::kernel, noise);
+BO_DECLARE_DYN_PARAM(bool, Params::kernel, optimize_noise);
+
+BO_DECLARE_DYN_PARAM(double, Params::acqui_ei, jitter);
+BO_DECLARE_DYN_PARAM(double, Params::acqui_ucb, alpha);
+
+// This doesn't work, because they use a constexpr with delta
+//BO_DECLARE_DYN_PARAM(double, Params::acqui_gpucb, delta);
 
 
 namespace apollo
 {
 
-BayesianOptim::BayesianOptim(int num_policies, int num_features)
+BayesianOptim::BayesianOptim(int num_policies, int num_features,
+                const std::string &kernel, const std::string &acqui, 
+                double acqui_hyper, double sigma_sq, double l, 
+                int k, double whiteKernel, int seed)
   						: PolicyModel(num_policies, "BayesianOptim"),
         			      num_features(num_features), first_execution(1) {
 
@@ -48,14 +58,44 @@ BayesianOptim::BayesianOptim(int num_policies, int num_features)
     // This is how many dimensions of the search space we have, set it to 1 for now
     // since we're mapping 'policy' to 'xtime'
 	eval_func::set_dim_in(1);
-    boptimizer.setSeed(775);
+    Params::bayes_opt_bobase::set_bounded(true);
+    Params::bayes_opt_bobase::set_stats_enabled(1);
+    Params::kernel::set_noise(whiteKernel);
+
+
+    if(kernel == "sqexp"){
+        if(acqui == "ei"){
+            boptimizer = new BO_SQEXP_EI(seed, sigma_sq, l, acqui_hyper);
+        }
+        else if(acqui == "ucb"){
+            boptimizer = new BO_SQEXP_UCB(seed, sigma_sq, l, acqui_hyper);
+        }
+        else if(acqui == "gpucb"){
+            boptimizer = new BO_SQEXP_GPUCB(seed, sigma_sq, l, acqui_hyper);
+        }
+        else{
+            throw std::runtime_error("Invalid acquisition function" + acqui + " for BO!");
+        }
+    }
+    else{
+        boptimizer = new BO_SQEXP_EI(seed, sigma_sq, l, acqui_hyper);
+    }
+    //boptimizer->setSeed(seed);
+
+
+};
+
+BayesianOptim::~BayesianOptim(){
+    boptimizer->writeGPVizFiles();
+    delete boptimizer;
+    return;
 };
 
 
 int BayesianOptim::getIndex(std::vector<float> &features) {
 
 	// This function will simply query the BO model
-    last_point = boptimizer.getNextPoint(eval_func(), FirstElem(), first_execution);
+    last_point = boptimizer->getNextPoint(eval_func(), FirstElem(), first_execution);
 
     if(first_execution){ first_execution = 0; }
 
@@ -73,7 +113,7 @@ void BayesianOptim::train(Apollo::Dataset &dataset){
     // Apollo gives us the dataset of features and their mapping
     // Need to convert it to VectorXd format for the optimizer.
 
-    std::cout << "training samps:" << boptimizer.getNumSamples() << "\ndataset\n";
+    std::cout << "training samps:" << boptimizer->getNumSamples() << "\ndataset\n";
 
     const auto &data = dataset.toVectorOfTuples();
 
@@ -107,8 +147,13 @@ void BayesianOptim::train(Apollo::Dataset &dataset){
 
         std::cout << "policy " << policy << " (" << x(0) << ")" << " xtime " << y(0) << std::endl;
 
-        boptimizer.updateModel(x,y,FirstElem());
+        boptimizer->updateModel(x,y,FirstElem());
     }
+
+    // this forces only new training data to be around on the next train() call
+    // this breaks if we have multiple models on the same region -- some models might
+    // not get any data...
+    dataset.clear();
 
     //first_execution = 1;
     return;

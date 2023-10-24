@@ -70,6 +70,8 @@ std::unique_ptr<PolicyModel> ModelFactory::createPolicyModel(
     }
     return std::make_unique<Static>(num_policies, policy);
   } else if (model_name == "BayesianOptim") {
+    // Need to parse user inputs here and properly call constructor...
+    
     return std::make_unique<BayesianOptim>(num_policies, num_features);
   } else if (model_name == "DatasetMap") {
     return std::make_unique<DatasetMap>(num_policies);
