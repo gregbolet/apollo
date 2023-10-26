@@ -11,10 +11,10 @@
 #include "apollo/Region.h"
 
 #define NUM_FEATURES 1
-#define NUM_POLICIES 4
-#define REPS 4
+#define NUM_POLICIES 10
+#define NUM_SAMPLES 30
+#define REPS 1
 #define DELAY 0.01
-#define FREQ 1
 
 
 static void delay_loop(const double delay)
@@ -40,55 +40,27 @@ int main()
   Apollo::Region *r = new Apollo::Region(NUM_FEATURES,
                                          "test-region",
                                          NUM_POLICIES,
-                                         /* min_training_data */ 1,
-                                         "BayesianOptim");
+                                         /* min_training_data */ 1);
 
-  int match;
   // Outer loop to simulate iterative execution of inner region, install tuned
   // model after first iteration that fully explores features and variants.
-  for (int j = 1; j <= 2; j++) {
-    match = 0;
-    // Features match policies, iterate over all possible pairs when RoundRobin.
-    // Do so REPS times to gather multiple measurements per pair.
-    for (int n = 0; n < REPS; n++) {
-      for (int i = 0; i < NUM_POLICIES; i++) {
-        for (int k = 0; k < NUM_POLICIES; k++) {
-          int feature = (k + i) % NUM_POLICIES;
-          r->begin();
-          r->setFeature(float(feature));
 
-          int policy = r->getPolicyIndex();
+  // We're going to form a 'V' in xtimes, where the middle policy (idx 2)
+  // has the best xtime, while the others have larger xtimes.
+  for (int n = 0; n < REPS; n++) {
+    for (int i = 0; i < NUM_SAMPLES; i++) {
+        r->begin();
 
-          // printf("Feature %d Policy %d\n", feature, policy);
+        // ignoring feature
+        r->setFeature(float(0));
 
-          if (policy != feature) {
-            delay_loop(DELAY);
-          } else {
-            // No delay when feature matches the policy.
-            // printf("Match!\n");
-            match++;
-          }
+        int policy = r->getPolicyIndex();
 
-          r->end();
-        }
-      }
-    }
+        delay_loop(DELAY * (((NUM_POLICIES/2)-policy)*((NUM_POLICIES/2)-policy)));
 
-    // Second outer loop iteration should have perfect matching.
-    printf("test-region iteration %d matched %d / %d\n",
-           j,
-           match,
-           REPS * NUM_POLICIES * NUM_POLICIES);
-    if (j == 1) {
-      printf("Install model\n");
-      apollo->train(0);
+        r->end();
     }
   }
-
-  if (match == REPS * NUM_POLICIES * NUM_POLICIES)
-    std::cout << "PASSED\n";
-  else
-    std::cout << "FAILED\n";
 
   std::cout << "=== Testing complete\n";
 

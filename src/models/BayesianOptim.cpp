@@ -44,7 +44,7 @@ namespace apollo
 {
 
 BayesianOptim::BayesianOptim(int num_policies, int num_features,
-                const std::string &kernel, const std::string &acqui, 
+                std::string &kernel, std::string &acqui, 
                 double acqui_hyper, double sigma_sq, double l, 
                 int k, double whiteKernel, int seed)
   						: PolicyModel(num_policies, "BayesianOptim"),
@@ -64,20 +64,31 @@ BayesianOptim::BayesianOptim(int num_policies, int num_features,
 
 
     if(kernel == "sqexp"){
-        if(acqui == "ei"){
-            boptimizer = new BO_SQEXP_EI(seed, sigma_sq, l, acqui_hyper);
-        }
-        else if(acqui == "ucb"){
-            boptimizer = new BO_SQEXP_UCB(seed, sigma_sq, l, acqui_hyper);
-        }
-        else if(acqui == "gpucb"){
-            boptimizer = new BO_SQEXP_GPUCB(seed, sigma_sq, l, acqui_hyper);
-        }
-        else{
-            throw std::runtime_error("Invalid acquisition function" + acqui + " for BO!");
-        }
+        if     (acqui == "ei"){    boptimizer = new BO_SQEXP_EI   (seed, sigma_sq, l, acqui_hyper); }
+        else if(acqui == "ucb"){   boptimizer = new BO_SQEXP_UCB  (seed, sigma_sq, l, acqui_hyper); }
+        else if(acqui == "gpucb"){ boptimizer = new BO_SQEXP_GPUCB(seed, sigma_sq, l, acqui_hyper); }
+        else{ throw std::runtime_error("Invalid acquisition function" + acqui + " for SQEXP kernel!"); }
+    }
+    else if(kernel == "sqexpard"){
+        if     (acqui == "ei"){    boptimizer = new BO_SQEXPARD_EI   (seed, sigma_sq, k, acqui_hyper); }
+        else if(acqui == "ucb"){   boptimizer = new BO_SQEXPARD_UCB  (seed, sigma_sq, k, acqui_hyper); }
+        else if(acqui == "gpucb"){ boptimizer = new BO_SQEXPARD_GPUCB(seed, sigma_sq, k, acqui_hyper); }
+        else{ throw std::runtime_error("Invalid acquisition function" + acqui + " for SQEXPARD kernel!"); }
+    }
+    else if(kernel == "mat32"){
+        if     (acqui == "ei"){    boptimizer = new BO_MATERN32_EI   (seed, sigma_sq, l, acqui_hyper); }
+        else if(acqui == "ucb"){   boptimizer = new BO_MATERN32_UCB  (seed, sigma_sq, l, acqui_hyper); }
+        else if(acqui == "gpucb"){ boptimizer = new BO_MATERN32_GPUCB(seed, sigma_sq, l, acqui_hyper); }
+        else{ throw std::runtime_error("Invalid acquisition function" + acqui + " for MATERN 3/2 kernel!"); }
+    }
+    else if(kernel == "mat52"){
+        if     (acqui == "ei"){    boptimizer = new BO_MATERN52_EI   (seed, sigma_sq, l, acqui_hyper); }
+        else if(acqui == "ucb"){   boptimizer = new BO_MATERN52_UCB  (seed, sigma_sq, l, acqui_hyper); }
+        else if(acqui == "gpucb"){ boptimizer = new BO_MATERN52_GPUCB(seed, sigma_sq, l, acqui_hyper); }
+        else{ throw std::runtime_error("Invalid acquisition function" + acqui + " for MATERN 5/2 kernel!"); }
     }
     else{
+        std::cout << "No kernel and acqui function given, using default: SQEXP and EI" << std::endl;
         boptimizer = new BO_SQEXP_EI(seed, sigma_sq, l, acqui_hyper);
     }
     //boptimizer->setSeed(seed);
@@ -134,7 +145,7 @@ void BayesianOptim::train(Apollo::Dataset &dataset){
         //std::cout << "policy " << policy << " xtime " << metric << std::endl;
 
         // we need to map the x 'policy' value between the range of [0,1]
-        double mapped_policy = ((double) policy)/policy_count;
+        double mapped_policy = ((double) policy)/(policy_count-1);
 
         //std::cout << "policy " << policy << " (" << mapped_policy << ")" << " xtime " << metric << std::endl;
 

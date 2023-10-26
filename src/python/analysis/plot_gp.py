@@ -17,7 +17,6 @@ params = {
     'legend.fontsize': 10,
     'xtick.labelsize': 10,
     'ytick.labelsize': 10,
-    'figure.figsize': [8, 4.5]
 }
 mpl.rcParams.update(params)
 
@@ -39,7 +38,9 @@ ax.plot(gp[:,0], gp[:,1], linewidth=2, color=colors[0])
 # sampled points
 ax.plot(data[:,0], data[:, 1], 'o', color=colors[2])
 
-legend = ax.legend(["GP-kernel mean", 'Data'], loc=8)
+legend = ax.legend(["GP-kernel mean", 'Data'], 
+                    loc='upper center', bbox_to_anchor=(0.5, -0.10),
+                    fancybox=True, shadow=True, ncol=5)
 
 ax.get_xaxis().tick_bottom()
 ax.get_yaxis().tick_left()
@@ -47,13 +48,15 @@ ax.get_yaxis().tick_left()
 ax.tick_params(axis='x', direction='out')
 ax.tick_params(axis='y', length=0)
 
-uniqueXvals = np.unique(np.concatenate((data[:,0], np.array([0.0, 0.25, 0.5, 0.75, 1.0]))))
+uniqueXvals = np.unique(np.concatenate((data[:,0], np.array([0.0, 1.0]))))
 ax.set_xticklabels(uniqueXvals)
 ax.set_xticks(uniqueXvals)
 
 ax.set_axisbelow(True)
 ax.grid(axis='y', color="0.9", linestyle='-', linewidth=1)
 ax.set_title('Exploration Space')
+ax.set_xlabel('Policy')
+ax.set_ylabel('-1 * xtime')
 
 
 # let's plot the acqusition function now

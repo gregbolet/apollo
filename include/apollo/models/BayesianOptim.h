@@ -250,6 +250,16 @@ class CustomBOptimizer : public bayes_opt::BOptimizer<Params, A1, A2, A3, A4, A5
 };
 
 
+
+
+
+
+
+
+
+
+
+
 struct CustomBOptimBase{
     virtual int getNumSamples() = 0;
     virtual void setSeed(int seed) = 0;
@@ -261,10 +271,18 @@ struct CustomBOptimBase{
 };
 
 
+
+
+
+
+
+
+
 struct BO_SQEXP_EI : CustomBOptimBase{
     public: 
         BO_SQEXP_EI(int seed, double sigma_sq, double l, double jitter) : CustomBOptimBase() {
             std::cout << "setup BO_SQEXP_EI!" << std::endl;
+            std::cout << "using seed: " << seed << " sigma_sq: " << sigma_sq << " l: " << l << " jitter: " << jitter << std::endl;
             MY_BO.setSeed(seed);
 
             Params::kernel_exp::set_sigma_sq(sigma_sq);
@@ -297,6 +315,7 @@ struct BO_SQEXP_UCB : CustomBOptimBase{
     public: 
         BO_SQEXP_UCB(int seed, double sigma_sq, double l, double alpha) : CustomBOptimBase() {
             std::cout << "setup BO_SQEXP_UCB!" << std::endl;
+            std::cout << "using seed: " << seed << " sigma_sq: " << sigma_sq << " l: " << l << " alpha: " << alpha << std::endl;
             MY_BO.setSeed(seed);
 
             Params::kernel_exp::set_sigma_sq(sigma_sq);
@@ -329,6 +348,7 @@ struct BO_SQEXP_GPUCB : CustomBOptimBase{
     public: 
         BO_SQEXP_GPUCB(int seed, double sigma_sq, double l, double delta) : CustomBOptimBase() {
             std::cout << "setup BO_SQEXP_GPUCB!" << std::endl;
+            std::cout << "using seed: " << seed << " sigma_sq: " << sigma_sq << " l: " << l << " delta: " << delta << std::endl;
             MY_BO.setSeed(seed);
 
             Params::kernel_exp::set_sigma_sq(sigma_sq);
@@ -362,20 +382,357 @@ struct BO_SQEXP_GPUCB : CustomBOptimBase{
 
 
 
+
+
+
+
+
+
+struct BO_SQEXPARD_EI : CustomBOptimBase{
+    public: 
+        BO_SQEXPARD_EI(int seed, double sigma_sq, double k, double jitter) : CustomBOptimBase() {
+            std::cout << "setup BO_SQEXPARD_EI!" << std::endl;
+            std::cout << "using seed: " << seed << " sigma_sq: " << sigma_sq << " k: " << k << " jitter: " << jitter << std::endl;
+            MY_BO.setSeed(seed);
+
+            Params::kernel_squared_exp_ard::set_sigma_sq(sigma_sq);
+            Params::kernel_squared_exp_ard::set_k(k);
+            Params::acqui_ei::set_jitter(jitter);
+        }
+        ~BO_SQEXPARD_EI(){
+            std::cout << "destroying BO_SQEXPARD_EI!" << std::endl;
+        }
+        int getNumSamples() {return MY_BO.getNumSamples();};
+        void setSeed(int seed) {MY_BO.setSeed(seed);};
+        void writeGPVizFiles(){MY_BO.writeGPVizFiles();};
+        void updateModel(Eigen::VectorXd& sample, Eigen::VectorXd& val, const FirstElem& afun){
+            MY_BO.updateModel(sample, val, afun);
+        };
+        Eigen::VectorXd getNextPoint(const eval_func& sfun, const FirstElem& afun, bool reset=true){
+            return MY_BO.getNextPoint(sfun, afun, reset);
+        };
+    private:
+        #undef kernel_t
+        #undef acqui_t
+        #undef gp_t
+        #define kernel_t kernel::SquaredExpARD<Params>
+        #define gp_t model::GP<Params, kernel_t, mean_t>
+        #define acqui_t acqui::EI<Params, gp_t>
+        CustomBOptimizer<Params, modelfun<gp_t>, acquifun<acqui_t>, initfun<init_t>> MY_BO;
+};
+
+struct BO_SQEXPARD_UCB : CustomBOptimBase{
+    public: 
+        BO_SQEXPARD_UCB(int seed, double sigma_sq, double k, double alpha) : CustomBOptimBase() {
+            std::cout << "setup BO_SQEXPARD_UCB!" << std::endl;
+            std::cout << "using seed: " << seed << " sigma_sq: " << sigma_sq << " k: " << k << " alpha: " << alpha << std::endl;
+            MY_BO.setSeed(seed);
+
+            Params::kernel_squared_exp_ard::set_sigma_sq(sigma_sq);
+            Params::kernel_squared_exp_ard::set_k(k);
+            Params::acqui_ucb::set_alpha(alpha);
+        }
+        ~BO_SQEXPARD_UCB(){
+            std::cout << "destroying BO_SQEXPARD_UCB!" << std::endl;
+        }
+        int getNumSamples() {return MY_BO.getNumSamples();};
+        void setSeed(int seed) {MY_BO.setSeed(seed);};
+        void writeGPVizFiles(){MY_BO.writeGPVizFiles();};
+        void updateModel(Eigen::VectorXd& sample, Eigen::VectorXd& val, const FirstElem& afun){
+            MY_BO.updateModel(sample, val, afun);
+        };
+        Eigen::VectorXd getNextPoint(const eval_func& sfun, const FirstElem& afun, bool reset=true){
+            return MY_BO.getNextPoint(sfun, afun, reset);
+        };
+    private:
+        #undef kernel_t
+        #undef acqui_t
+        #undef gp_t
+        #define kernel_t kernel::SquaredExpARD<Params>
+        #define gp_t model::GP<Params, kernel_t, mean_t>
+        #define acqui_t acqui::UCB<Params, gp_t>
+        CustomBOptimizer<Params, modelfun<gp_t>, acquifun<acqui_t>, initfun<init_t>> MY_BO;
+};
+
+
+struct BO_SQEXPARD_GPUCB : CustomBOptimBase{
+    public: 
+        BO_SQEXPARD_GPUCB(int seed, double sigma_sq, double k, double delta) : CustomBOptimBase() {
+            std::cout << "setup BO_SQEXPARD_GPUCB!" << std::endl;
+            std::cout << "using seed: " << seed << " sigma_sq: " << sigma_sq << " k: " << k << " delta: " << delta << std::endl;
+            MY_BO.setSeed(seed);
+
+            Params::kernel_squared_exp_ard::set_sigma_sq(sigma_sq);
+            Params::kernel_squared_exp_ard::set_k(k);
+            //Params::acqui_gpucb::set_delta(delta);
+        }
+        ~BO_SQEXPARD_GPUCB(){
+            std::cout << "destroying BO_SQEXPARD_GPUCB!" << std::endl;
+        }
+        int getNumSamples() {return MY_BO.getNumSamples();};
+        void setSeed(int seed) {MY_BO.setSeed(seed);};
+        void writeGPVizFiles(){MY_BO.writeGPVizFiles();};
+        void updateModel(Eigen::VectorXd& sample, Eigen::VectorXd& val, const FirstElem& afun){
+            MY_BO.updateModel(sample, val, afun);
+        };
+        Eigen::VectorXd getNextPoint(const eval_func& sfun, const FirstElem& afun, bool reset=true){
+            return MY_BO.getNextPoint(sfun, afun, reset);
+        };
+    private:
+        #undef kernel_t
+        #undef acqui_t
+        #undef gp_t
+        #define kernel_t kernel::SquaredExpARD<Params>
+        #define gp_t model::GP<Params, kernel_t, mean_t>
+        #define acqui_t acqui::GP_UCB<Params, gp_t>
+        CustomBOptimizer<Params, modelfun<gp_t>, acquifun<acqui_t>, initfun<init_t>> MY_BO;
+};
+
+
+
+
+
+
+
+
+
+struct BO_MATERN32_EI : CustomBOptimBase{
+    public: 
+        BO_MATERN32_EI(int seed, double sigma_sq, double l, double jitter) : CustomBOptimBase() {
+            std::cout << "setup BO_MATERN32_EI!" << std::endl;
+            std::cout << "using seed: " << seed << " sigma_sq: " << sigma_sq << " l: " << l << " jitter: " << jitter << std::endl;
+            MY_BO.setSeed(seed);
+
+            Params::kernel_maternthreehalves::set_sigma_sq(sigma_sq);
+            Params::kernel_maternthreehalves::set_l(l);
+            Params::acqui_ei::set_jitter(jitter);
+        }
+        ~BO_MATERN32_EI(){
+            std::cout << "destroying BO_MATERN32_EI!" << std::endl;
+        }
+        int getNumSamples() {return MY_BO.getNumSamples();};
+        void setSeed(int seed) {MY_BO.setSeed(seed);};
+        void writeGPVizFiles(){MY_BO.writeGPVizFiles();};
+        void updateModel(Eigen::VectorXd& sample, Eigen::VectorXd& val, const FirstElem& afun){
+            MY_BO.updateModel(sample, val, afun);
+        };
+        Eigen::VectorXd getNextPoint(const eval_func& sfun, const FirstElem& afun, bool reset=true){
+            return MY_BO.getNextPoint(sfun, afun, reset);
+        };
+    private:
+        #undef kernel_t
+        #undef acqui_t
+        #undef gp_t
+        #define kernel_t kernel::MaternThreeHalves<Params>
+        #define gp_t model::GP<Params, kernel_t, mean_t>
+        #define acqui_t acqui::EI<Params, gp_t>
+        CustomBOptimizer<Params, modelfun<gp_t>, acquifun<acqui_t>, initfun<init_t>> MY_BO;
+};
+
+struct BO_MATERN32_UCB : CustomBOptimBase{
+    public: 
+        BO_MATERN32_UCB(int seed, double sigma_sq, double l, double alpha) : CustomBOptimBase() {
+            std::cout << "setup BO_MATERN32_UCB!" << std::endl;
+            std::cout << "using seed: " << seed << " sigma_sq: " << sigma_sq << " l: " << l << " alpha: " << alpha << std::endl;
+            MY_BO.setSeed(seed);
+
+            Params::kernel_maternthreehalves::set_sigma_sq(sigma_sq);
+            Params::kernel_maternthreehalves::set_l(l);
+            Params::acqui_ucb::set_alpha(alpha);
+        }
+        ~BO_MATERN32_UCB(){
+            std::cout << "destroying BO_MATERN32_UCB!" << std::endl;
+        }
+        int getNumSamples() {return MY_BO.getNumSamples();};
+        void setSeed(int seed) {MY_BO.setSeed(seed);};
+        void writeGPVizFiles(){MY_BO.writeGPVizFiles();};
+        void updateModel(Eigen::VectorXd& sample, Eigen::VectorXd& val, const FirstElem& afun){
+            MY_BO.updateModel(sample, val, afun);
+        };
+        Eigen::VectorXd getNextPoint(const eval_func& sfun, const FirstElem& afun, bool reset=true){
+            return MY_BO.getNextPoint(sfun, afun, reset);
+        };
+    private:
+        #undef kernel_t
+        #undef acqui_t
+        #undef gp_t
+        #define kernel_t kernel::MaternThreeHalves<Params>
+        #define gp_t model::GP<Params, kernel_t, mean_t>
+        #define acqui_t acqui::UCB<Params, gp_t>
+        CustomBOptimizer<Params, modelfun<gp_t>, acquifun<acqui_t>, initfun<init_t>> MY_BO;
+};
+
+struct BO_MATERN32_GPUCB : CustomBOptimBase{
+    public: 
+        BO_MATERN32_GPUCB(int seed, double sigma_sq, double l, double delta) : CustomBOptimBase() {
+            std::cout << "setup BO_MATERN32_GPUCB!" << std::endl;
+            std::cout << "using seed: " << seed << " sigma_sq: " << sigma_sq << " l: " << l << " delta: " << delta << std::endl;
+            MY_BO.setSeed(seed);
+
+            Params::kernel_maternthreehalves::set_sigma_sq(sigma_sq);
+            Params::kernel_maternthreehalves::set_l(l);
+            // can't set this due to acqui_gpucb constexpr on delta...
+            // might need to redefine acqui_gpucb myself...
+            //Params::acqui_gpucb::set_delta(delta);
+        }
+        ~BO_MATERN32_GPUCB(){
+            std::cout << "destroying BO_MATERN32_GPUCB!" << std::endl;
+        }
+        int getNumSamples() {return MY_BO.getNumSamples();};
+        void setSeed(int seed) {MY_BO.setSeed(seed);};
+        void writeGPVizFiles(){MY_BO.writeGPVizFiles();};
+        void updateModel(Eigen::VectorXd& sample, Eigen::VectorXd& val, const FirstElem& afun){
+            MY_BO.updateModel(sample, val, afun);
+        };
+        Eigen::VectorXd getNextPoint(const eval_func& sfun, const FirstElem& afun, bool reset=true){
+            return MY_BO.getNextPoint(sfun, afun, reset);
+        };
+    private:
+        #undef kernel_t
+        #undef acqui_t
+        #undef gp_t
+        #define kernel_t kernel::MaternThreeHalves<Params>
+        #define gp_t model::GP<Params, kernel_t, mean_t>
+        #define acqui_t acqui::GP_UCB<Params, gp_t>
+        CustomBOptimizer<Params, modelfun<gp_t>, acquifun<acqui_t>, initfun<init_t>> MY_BO;
+};
+
+
+
+
+
+
+
+
+
+
+struct BO_MATERN52_EI : CustomBOptimBase{
+    public: 
+        BO_MATERN52_EI(int seed, double sigma_sq, double l, double jitter) : CustomBOptimBase() {
+            std::cout << "setup BO_MATERN52_EI!" << std::endl;
+            std::cout << "using seed: " << seed << " sigma_sq: " << sigma_sq << " l: " << l << " jitter: " << jitter << std::endl;
+            MY_BO.setSeed(seed);
+
+            Params::kernel_maternfivehalves::set_sigma_sq(sigma_sq);
+            Params::kernel_maternfivehalves::set_l(l);
+            Params::acqui_ei::set_jitter(jitter);
+        }
+        ~BO_MATERN52_EI(){
+            std::cout << "destroying BO_MATERN52_EI!" << std::endl;
+        }
+        int getNumSamples() {return MY_BO.getNumSamples();};
+        void setSeed(int seed) {MY_BO.setSeed(seed);};
+        void writeGPVizFiles(){MY_BO.writeGPVizFiles();};
+        void updateModel(Eigen::VectorXd& sample, Eigen::VectorXd& val, const FirstElem& afun){
+            MY_BO.updateModel(sample, val, afun);
+        };
+        Eigen::VectorXd getNextPoint(const eval_func& sfun, const FirstElem& afun, bool reset=true){
+            return MY_BO.getNextPoint(sfun, afun, reset);
+        };
+    private:
+        #undef kernel_t
+        #undef acqui_t
+        #undef gp_t
+        #define kernel_t kernel::MaternFiveHalves<Params>
+        #define gp_t model::GP<Params, kernel_t, mean_t>
+        #define acqui_t acqui::EI<Params, gp_t>
+        CustomBOptimizer<Params, modelfun<gp_t>, acquifun<acqui_t>, initfun<init_t>> MY_BO;
+};
+
+struct BO_MATERN52_UCB : CustomBOptimBase{
+    public: 
+        BO_MATERN52_UCB(int seed, double sigma_sq, double l, double alpha) : CustomBOptimBase() {
+            std::cout << "setup BO_MATERN52_UCB!" << std::endl;
+            std::cout << "using seed: " << seed << " sigma_sq: " << sigma_sq << " l: " << l << " alpha: " << alpha << std::endl;
+            MY_BO.setSeed(seed);
+
+            Params::kernel_maternfivehalves::set_sigma_sq(sigma_sq);
+            Params::kernel_maternfivehalves::set_l(l);
+            Params::acqui_ucb::set_alpha(alpha);
+        }
+        ~BO_MATERN52_UCB(){
+            std::cout << "destroying BO_MATERN52_UCB!" << std::endl;
+        }
+        int getNumSamples() {return MY_BO.getNumSamples();};
+        void setSeed(int seed) {MY_BO.setSeed(seed);};
+        void writeGPVizFiles(){MY_BO.writeGPVizFiles();};
+        void updateModel(Eigen::VectorXd& sample, Eigen::VectorXd& val, const FirstElem& afun){
+            MY_BO.updateModel(sample, val, afun);
+        };
+        Eigen::VectorXd getNextPoint(const eval_func& sfun, const FirstElem& afun, bool reset=true){
+            return MY_BO.getNextPoint(sfun, afun, reset);
+        };
+    private:
+        #undef kernel_t
+        #undef acqui_t
+        #undef gp_t
+        #define kernel_t kernel::MaternFiveHalves<Params>
+        #define gp_t model::GP<Params, kernel_t, mean_t>
+        #define acqui_t acqui::UCB<Params, gp_t>
+        CustomBOptimizer<Params, modelfun<gp_t>, acquifun<acqui_t>, initfun<init_t>> MY_BO;
+};
+
+struct BO_MATERN52_GPUCB : CustomBOptimBase{
+    public: 
+        BO_MATERN52_GPUCB(int seed, double sigma_sq, double l, double delta) : CustomBOptimBase() {
+            std::cout << "setup BO_MATERN52_GPUCB!" << std::endl;
+            std::cout << "using seed: " << seed << " sigma_sq: " << sigma_sq << " l: " << l << " delta: " << delta << std::endl;
+            MY_BO.setSeed(seed);
+
+            Params::kernel_maternfivehalves::set_sigma_sq(sigma_sq);
+            Params::kernel_maternfivehalves::set_l(l);
+            // can't set this due to acqui_gpucb constexpr on delta...
+            // might need to redefine acqui_gpucb myself...
+            //Params::acqui_gpucb::set_delta(delta);
+        }
+        ~BO_MATERN52_GPUCB(){
+            std::cout << "destroying BO_MATERN52_GPUCB!" << std::endl;
+        }
+        int getNumSamples() {return MY_BO.getNumSamples();};
+        void setSeed(int seed) {MY_BO.setSeed(seed);};
+        void writeGPVizFiles(){MY_BO.writeGPVizFiles();};
+        void updateModel(Eigen::VectorXd& sample, Eigen::VectorXd& val, const FirstElem& afun){
+            MY_BO.updateModel(sample, val, afun);
+        };
+        Eigen::VectorXd getNextPoint(const eval_func& sfun, const FirstElem& afun, bool reset=true){
+            return MY_BO.getNextPoint(sfun, afun, reset);
+        };
+    private:
+        #undef kernel_t
+        #undef acqui_t
+        #undef gp_t
+        #define kernel_t kernel::MaternFiveHalves<Params>
+        #define gp_t model::GP<Params, kernel_t, mean_t>
+        #define acqui_t acqui::GP_UCB<Params, gp_t>
+        CustomBOptimizer<Params, modelfun<gp_t>, acquifun<acqui_t>, initfun<init_t>> MY_BO;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
 namespace apollo
 {
 class BayesianOptim : public PolicyModel
 {
 public:
   BayesianOptim(int num_policies, int num_features, 
-                const std::string &kernel = "sqexp", 
-                const std::string &acqui = "gpucb",
-                double acqui_hyper=0.1,
-                double sigma_sq = 1.0,
-                double l = 1.0,
-                int k = 1,
-                double whiteKernel = 1e-10,
-                int seed = 777);
+                std::string &kernel, 
+                std::string &acqui,
+                double acqui_hyper,
+                double sigma_sq,
+                double l,
+                int k,
+                double whiteKernel,
+                int seed);
   ~BayesianOptim();
 
   int getIndex(std::vector<float> &features);
