@@ -92,9 +92,9 @@ std::unique_ptr<PolicyModel> ModelFactory::createPolicyModel(
       else if(acqui == "gpucb"){acqui_hyper = 0.1;}
     }
 
-    it = model_params.find("sigma_sq"); if ( it != model_params.end()) sigma_sq = std::stod(it->second); 
-    it = model_params.find("l"); if ( it != model_params.end()) l = std::stod(it->second); 
-    it = model_params.find("k"); if ( it != model_params.end()) k = std::stoi(it->second); 
+    it = model_params.find("sigmasq"); if ( it != model_params.end()) sigma_sq = std::stod(it->second); 
+    it = model_params.find("lp"); if ( it != model_params.end()) l = std::stod(it->second); 
+    it = model_params.find("kp"); if ( it != model_params.end()) k = std::stoi(it->second); 
     
     return std::make_unique<BayesianOptim>(num_policies, num_features, kernel, acqui,
                                            acqui_hyper, sigma_sq, l, k, noise, seed);

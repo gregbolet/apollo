@@ -11,10 +11,10 @@
 #include "apollo/Region.h"
 
 #define NUM_FEATURES 1
-#define NUM_POLICIES 10
+#define NUM_POLICIES 50
 #define NUM_SAMPLES 30
 #define REPS 1
-#define DELAY 0.01
+#define DELAY 0.001
 
 
 static void delay_loop(const double delay)
@@ -33,14 +33,21 @@ int main()
 {
   std::cout << "=== Testing Apollo correctness\n";
 
-  Apollo *apollo = Apollo::instance();
+  
+  //static Apollo *apollo = Apollo::instance(); 
+  //static Apollo::Region r(NUM_FEATURES, "test-region", NUM_POLICIES, 1);
+  static Apollo::Region *r;
+  if(!r){
+    r = new Apollo::Region(NUM_FEATURES, "test-region", NUM_POLICIES, 1);
+  }
+  //Apollo *apollo = Apollo::instance();
 
   // Create region, DecisionTree with max_depth 3 will always pick the optimal
   // policy.
-  Apollo::Region *r = new Apollo::Region(NUM_FEATURES,
-                                         "test-region",
-                                         NUM_POLICIES,
-                                         /* min_training_data */ 1);
+  //Apollo::Region *r = new Apollo::Region(NUM_FEATURES,
+  //                                       "test-region",
+  //                                       NUM_POLICIES,
+  //                                       /* min_training_data */ 1);
 
   // Outer loop to simulate iterative execution of inner region, install tuned
   // model after first iteration that fully explores features and variants.
@@ -50,15 +57,20 @@ int main()
   for (int n = 0; n < REPS; n++) {
     for (int i = 0; i < NUM_SAMPLES; i++) {
         r->begin();
+        //r.begin();
 
         // ignoring feature
         r->setFeature(float(0));
+        //r.setFeature(float(0));
 
         int policy = r->getPolicyIndex();
+        //int policy = r.getPolicyIndex();
 
-        delay_loop(DELAY * (((NUM_POLICIES/2)-policy)*((NUM_POLICIES/2)-policy)));
+
+        delay_loop(DELAY * ((6-policy)*(6-policy)));
 
         r->end();
+        //r.end();
     }
   }
 

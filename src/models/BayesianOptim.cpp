@@ -50,7 +50,7 @@ BayesianOptim::BayesianOptim(int num_policies, int num_features,
   						: PolicyModel(num_policies, "BayesianOptim"),
         			      num_features(num_features), first_execution(1) {
 
-	std::cout << "Set up BO!" << std::endl;
+	//std::cout << "Set up BO!" << std::endl;
 
     // This is how many optimize() calls to make -- we set it to 1
 	Params::stop_maxiterations::set_iterations(1);
@@ -59,7 +59,7 @@ BayesianOptim::BayesianOptim(int num_policies, int num_features,
     // since we're mapping 'policy' to 'xtime'
 	eval_func::set_dim_in(1);
     Params::bayes_opt_bobase::set_bounded(true);
-    Params::bayes_opt_bobase::set_stats_enabled(1);
+    Params::bayes_opt_bobase::set_stats_enabled(0);
     Params::kernel::set_noise(whiteKernel);
 
 
@@ -124,7 +124,7 @@ void BayesianOptim::train(Apollo::Dataset &dataset){
     // Apollo gives us the dataset of features and their mapping
     // Need to convert it to VectorXd format for the optimizer.
 
-    std::cout << "training samps:" << boptimizer->getNumSamples() << "\ndataset\n";
+    //std::cout << "training samps:" << boptimizer->getNumSamples() << "\ndataset\n";
 
     const auto &data = dataset.toVectorOfTuples();
 
@@ -134,11 +134,11 @@ void BayesianOptim::train(Apollo::Dataset &dataset){
         std::vector<float> &feats = std::get<0>(item); 
         std::vector<double> features(feats.begin(), feats.end());
 
-        std::cout << "[";
-        for(double j : features){
-            std::cout << j << ",";
-        }
-        std::cout << "]";
+        //std::cout << "[";
+        //for(double j : features){
+        //    std::cout << j << ",";
+        //}
+        //std::cout << "]";
 
         int &policy = std::get<1>(item);
         double &metric = std::get<2>(item);
@@ -156,7 +156,7 @@ void BayesianOptim::train(Apollo::Dataset &dataset){
         Eigen::VectorXd y = Eigen::VectorXd(1);
         y(0) = -metric;
 
-        std::cout << "policy " << policy << " (" << x(0) << ")" << " xtime " << y(0) << std::endl;
+        //std::cout << "policy " << policy << " (" << x(0) << ")" << " xtime " << y(0) << std::endl;
 
         boptimizer->updateModel(x,y,FirstElem());
     }

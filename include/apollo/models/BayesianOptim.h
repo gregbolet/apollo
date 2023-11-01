@@ -68,7 +68,8 @@ struct eval_func {
     BO_PARAM(size_t, dim_out, 1);
 
     eval_func() {
-        std::cout << "Eval Funciton Init Called" << std::endl;
+        return;
+        //std::cout << "Eval Funciton Init Called" << std::endl;
     }
 
     Eigen::VectorXd operator()(const Eigen::VectorXd& x) const
@@ -149,7 +150,7 @@ class CustomBOptimizer : public bayes_opt::BOptimizer<Params, A1, A2, A3, A4, A5
             {
                 if (reset) { this->setSeed(_seed); }
 
-                std::cout << "total iters " << this->_total_iterations << std::endl;
+                //std::cout << "total iters " << this->_total_iterations << std::endl;
 
                 this->_init(sfun, afun, reset);
 
@@ -208,8 +209,9 @@ class CustomBOptimizer : public bayes_opt::BOptimizer<Params, A1, A2, A3, A4, A5
                 // our GP input values are bound between 0-1
                 // we need to map these back to the target space
                 std::ofstream ofs("gp.dat");
-                for (int i = 0; i < 100; ++i) {
-                    Eigen::VectorXd v = tools::make_vector(i / 100.0).array();
+                int viz_samples = this->_samples.size()*10;
+                for (int i = 0; i < viz_samples; ++i) {
+                    Eigen::VectorXd v = tools::make_vector(i / (float)viz_samples).array();
                     Eigen::VectorXd mu;
                     double sigma;
                     std::tie(mu, sigma) = gp.query(v);
@@ -224,8 +226,8 @@ class CustomBOptimizer : public bayes_opt::BOptimizer<Params, A1, A2, A3, A4, A5
 
                 // let's do the same sampling process for the acquisition function
                 std::ofstream ofs_acqui("acqui.dat");
-                for (int i = 0; i < 100; ++i) {
-                    Eigen::VectorXd v = tools::make_vector(i / 100.0).array();
+                for (int i = 0; i < viz_samples; ++i) {
+                    Eigen::VectorXd v = tools::make_vector(i / (float)viz_samples).array();
 
                     opt::eval_t res = acqui(v, FirstElem(), false);
 
@@ -390,7 +392,7 @@ struct BO_SQEXP_GPUCB : CustomBOptimBase{
 
 struct BO_SQEXPARD_EI : CustomBOptimBase{
     public: 
-        BO_SQEXPARD_EI(int seed, double sigma_sq, double k, double jitter) : CustomBOptimBase() {
+        BO_SQEXPARD_EI(int seed, double sigma_sq, int k, double jitter) : CustomBOptimBase() {
             std::cout << "setup BO_SQEXPARD_EI!" << std::endl;
             std::cout << "using seed: " << seed << " sigma_sq: " << sigma_sq << " k: " << k << " jitter: " << jitter << std::endl;
             MY_BO.setSeed(seed);
@@ -423,7 +425,7 @@ struct BO_SQEXPARD_EI : CustomBOptimBase{
 
 struct BO_SQEXPARD_UCB : CustomBOptimBase{
     public: 
-        BO_SQEXPARD_UCB(int seed, double sigma_sq, double k, double alpha) : CustomBOptimBase() {
+        BO_SQEXPARD_UCB(int seed, double sigma_sq, int k, double alpha) : CustomBOptimBase() {
             std::cout << "setup BO_SQEXPARD_UCB!" << std::endl;
             std::cout << "using seed: " << seed << " sigma_sq: " << sigma_sq << " k: " << k << " alpha: " << alpha << std::endl;
             MY_BO.setSeed(seed);
@@ -457,7 +459,7 @@ struct BO_SQEXPARD_UCB : CustomBOptimBase{
 
 struct BO_SQEXPARD_GPUCB : CustomBOptimBase{
     public: 
-        BO_SQEXPARD_GPUCB(int seed, double sigma_sq, double k, double delta) : CustomBOptimBase() {
+        BO_SQEXPARD_GPUCB(int seed, double sigma_sq, int k, double delta) : CustomBOptimBase() {
             std::cout << "setup BO_SQEXPARD_GPUCB!" << std::endl;
             std::cout << "using seed: " << seed << " sigma_sq: " << sigma_sq << " k: " << k << " delta: " << delta << std::endl;
             MY_BO.setSeed(seed);
