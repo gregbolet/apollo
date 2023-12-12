@@ -177,7 +177,8 @@ static void validate(const std::string &model_name,
       if (entry.first != "kernel" && entry.first != "acqui" && 
           entry.first != "noise" && entry.first != "seed" &&
           entry.first != "sigmasq" && entry.first != "lp" &&
-          entry.first != "kp" && entry.first != "acqui_hyper")
+          entry.first != "kp" && entry.first != "acqui_hyper" &&
+          entry.first != "max_samples")
         fatal_error("Unknown param key \"" + entry.first + "\" for policy BayesianOptim");
 
     return;

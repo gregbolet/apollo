@@ -129,6 +129,8 @@ if(ENABLE_CUDA)
   # TODO: Upgrade to CUDAToolkit for better handling, requires cmake 3.17+
   find_package(CUDA REQUIRED)
   include_directories(${CUDA_INCLUDE_DIRS})
+  message("${CUDA_INCLUDE_DIRS}")
+  add_definitions(-DENABLE_CUDA)
 endif()
 
 if(ENABLE_HIP)

@@ -3,6 +3,7 @@ build-*
 build
 install
 data
+.cache/
 go
 go.hard
 run

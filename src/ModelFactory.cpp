@@ -75,7 +75,7 @@ std::unique_ptr<PolicyModel> ModelFactory::createPolicyModel(
     std::string kernel="sqexp";
     std::string acqui="ei";
     double acqui_hyper=0, sigma_sq=1, noise=1e-10, l=1;
-    int seed=747, k=0;
+    int seed=747, k=0, max_samples=-1;
 
     auto it = model_params.find("kernel");
     if ( it != model_params.end()) kernel = it->second; 
@@ -95,9 +95,10 @@ std::unique_ptr<PolicyModel> ModelFactory::createPolicyModel(
     it = model_params.find("sigmasq"); if ( it != model_params.end()) sigma_sq = std::stod(it->second); 
     it = model_params.find("lp"); if ( it != model_params.end()) l = std::stod(it->second); 
     it = model_params.find("kp"); if ( it != model_params.end()) k = std::stoi(it->second); 
+    it = model_params.find("max_samples"); if ( it != model_params.end()) max_samples = std::stoi(it->second); 
     
     return std::make_unique<BayesianOptim>(num_policies, num_features, kernel, acqui,
-                                           acqui_hyper, sigma_sq, l, k, noise, seed);
+                                           acqui_hyper, sigma_sq, l, k, noise, seed, max_samples);
   } else if (model_name == "DatasetMap") {
     return std::make_unique<DatasetMap>(num_policies);
   } else if (model_name == "Random") {

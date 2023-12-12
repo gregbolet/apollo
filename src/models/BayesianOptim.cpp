@@ -46,9 +46,12 @@ namespace apollo
 BayesianOptim::BayesianOptim(int num_policies, int num_features,
                 std::string &kernel, std::string &acqui, 
                 double acqui_hyper, double sigma_sq, double l, 
-                int k, double whiteKernel, int seed)
+                int k, double whiteKernel, int seed, int max_samples)
   						: PolicyModel(num_policies, "BayesianOptim"),
-        			      num_features(num_features), first_execution(1) {
+        			      num_features(num_features), num_samples(0), 
+                          best_policy(-1), max_samples(max_samples), 
+                          best_policy_xtime(std::numeric_limits<double>::max()){
+        			      //num_features(num_features), first_execution(1) {
 
 	//std::cout << "Set up BO!" << std::endl;
 
@@ -106,17 +109,23 @@ BayesianOptim::~BayesianOptim(){
 int BayesianOptim::getIndex(std::vector<float> &features) {
 
 	// This function will simply query the BO model
-    last_point = boptimizer->getNextPoint(eval_func(), FirstElem(), first_execution);
+    //last_point = boptimizer->getNextPoint(eval_func(), FirstElem(), first_execution);
+    if((max_samples == -1) || (num_samples < max_samples)){
+        last_point = boptimizer->getNextPoint(eval_func(), FirstElem(), !num_samples);
 
-    if(first_execution){ first_execution = 0; }
+        //if(first_execution){ first_execution = 0; }
 
-    // policy will be in range of [0,1]
-    // need to convert it to integers by mapping [0,policy_count) <--> [0,1]
-    double raw_policy = last_point(0);
+        // policy will be in range of [0,1]
+        // need to convert it to integers by mapping [0,policy_count) <--> [0,1]
+        double raw_policy = last_point(0);
 
-    int policy = std::min((int) (raw_policy*policy_count), policy_count-1);
+        int policy = std::min((int) (raw_policy*policy_count), policy_count-1);
 
-    return policy;
+        return policy;
+    }
+    else{
+        return best_policy;
+    }
 }
 
 
@@ -144,6 +153,12 @@ void BayesianOptim::train(Apollo::Dataset &dataset){
         double &metric = std::get<2>(item);
         //std::cout << "policy " << policy << " xtime " << metric << std::endl;
 
+        // Let's keep track of the best policy for later use
+        if (metric < best_policy_xtime){
+            best_policy_xtime = metric;
+            best_policy = policy;
+        }
+
         // we need to map the x 'policy' value between the range of [0,1]
         double mapped_policy = ((double) policy)/(policy_count-1);
 
@@ -159,6 +174,7 @@ void BayesianOptim::train(Apollo::Dataset &dataset){
         //std::cout << "policy " << policy << " (" << x(0) << ")" << " xtime " << y(0) << std::endl;
 
         boptimizer->updateModel(x,y,FirstElem());
+        num_samples++;
     }
 
     // this forces only new training data to be around on the next train() call

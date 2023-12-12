@@ -734,19 +734,25 @@ public:
                 double l,
                 int k,
                 double whiteKernel,
-                int seed);
+                int seed,
+                int max_samples);
   ~BayesianOptim();
 
   int getIndex(std::vector<float> &features);
   void load(const std::string &filename){};
   void store(const std::string &filename){};
-  bool isTrainable() { return true; }
+  bool isTrainable() { return ((max_samples == -1) || (num_samples < max_samples)); }
   void train(Apollo::Dataset &dataset);
 
 private:
   int policy_choice;
   int num_features;
-  int first_execution;
+  int num_samples;
+  int best_policy;
+  double best_policy_xtime;
+  int max_samples;
+
+  //int first_execution;
 
   //template<class A, class B, class C, class D>
   //CustomBOptimizer<A,B,C,D> boptimizer;
