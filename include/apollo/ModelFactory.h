@@ -23,11 +23,19 @@ public:
       const std::string &model_name,
       int num_policies,
       const std::string &path);
+      
   static std::unique_ptr<PolicyModel> createPolicyModel(
       const std::string &model_name,
       int num_features,
       int num_policies,
       std::unordered_map<std::string, std::string> &model_params);
+
+  static std::unique_ptr<PolicyModel> createPolicyModel(
+      const std::string &model_name,
+      int num_features,
+      int num_policies,
+      std::unordered_map<std::string, std::string> &model_params,
+      std::string regionName);
 
   static std::unique_ptr<TimingModel> createRegressionTree(
       Apollo::Dataset &dataset);

@@ -69,36 +69,6 @@ std::unique_ptr<PolicyModel> ModelFactory::createPolicyModel(
       policy = 0;
     }
     return std::make_unique<Static>(num_policies, policy);
-  } else if (model_name == "BayesianOptim") {
-    // Need to parse user inputs here and properly call constructor...
-    // We assume that if the user enters incorrect inputs, we use these defaults
-    std::string kernel="sqexp";
-    std::string acqui="ei";
-    double acqui_hyper=0, sigma_sq=1, noise=1e-10, l=1;
-    int seed=747, k=0, max_samples=-1;
-
-    auto it = model_params.find("kernel");
-    if ( it != model_params.end()) kernel = it->second; 
-
-    it = model_params.find("acqui"); if ( it != model_params.end()) acqui = it->second; 
-    it = model_params.find("seed"); if ( it != model_params.end()) seed = std::stoi(it->second); 
-    it = model_params.find("noise"); if ( it != model_params.end()) noise = std::stod(it->second); 
-    it = model_params.find("acqui_hyper"); 
-    if ( it != model_params.end()) 
-      acqui_hyper = std::stod(it->second); 
-    else{
-      if(acqui == "ei"){acqui_hyper = 0.0;}
-      else if(acqui == "ucb"){acqui_hyper = 0.5;}
-      else if(acqui == "gpucb"){acqui_hyper = 0.1;}
-    }
-
-    it = model_params.find("sigmasq"); if ( it != model_params.end()) sigma_sq = std::stod(it->second); 
-    it = model_params.find("lp"); if ( it != model_params.end()) l = std::stod(it->second); 
-    it = model_params.find("kp"); if ( it != model_params.end()) k = std::stoi(it->second); 
-    it = model_params.find("max_samples"); if ( it != model_params.end()) max_samples = std::stoi(it->second); 
-    
-    return std::make_unique<BayesianOptim>(num_policies, num_features, kernel, acqui,
-                                           acqui_hyper, sigma_sq, l, k, noise, seed, max_samples);
   } else if (model_name == "DatasetMap") {
     return std::make_unique<DatasetMap>(num_policies);
   } else if (model_name == "Random") {
@@ -181,6 +151,53 @@ std::unique_ptr<PolicyModel> ModelFactory::createPolicyModel(
     std::cerr << __FILE__ << ":" << __LINE__ << ":: Invalid model "
               << model_name << std::endl;
     abort();
+  }
+}
+
+
+// only used to pass the region name to the Bayesian Optimizer
+std::unique_ptr<PolicyModel> ModelFactory::createPolicyModel(
+  const std::string &model_name,
+  int num_features,
+  int num_policies,
+  std::unordered_map<std::string, std::string> &model_params,
+  std::string regionName){
+
+  if (model_name == "BayesianOptim"){
+    // Need to parse user inputs here and properly call constructor...
+    // We assume that if the user enters incorrect inputs, we use these defaults
+    std::string kernel="sqexp";
+    std::string acqui="ei";
+    double acqui_hyper=0, sigma_sq=1, noise=1e-10, l=1;
+    int seed=747, k=0, max_samples=-1;
+
+    auto it = model_params.find("kernel");
+    if ( it != model_params.end()) kernel = it->second; 
+
+    it = model_params.find("acqui"); if ( it != model_params.end()) acqui = it->second; 
+    it = model_params.find("seed"); if ( it != model_params.end()) seed = std::stoi(it->second); 
+    it = model_params.find("noise"); if ( it != model_params.end()) noise = std::stod(it->second); 
+    it = model_params.find("acqui_hyper"); 
+    if ( it != model_params.end()) 
+      acqui_hyper = std::stod(it->second); 
+    else{
+      if(acqui == "ei"){acqui_hyper = 0.0;}
+      else if(acqui == "ucb"){acqui_hyper = 0.5;}
+      else if(acqui == "gpucb"){acqui_hyper = 0.1;}
+    }
+
+    it = model_params.find("sigmasq"); if ( it != model_params.end()) sigma_sq = std::stod(it->second); 
+    it = model_params.find("lp"); if ( it != model_params.end()) l = std::stod(it->second); 
+    it = model_params.find("kp"); if ( it != model_params.end()) k = std::stoi(it->second); 
+    it = model_params.find("max_samples"); if ( it != model_params.end()) max_samples = std::stoi(it->second); 
+    
+    return std::make_unique<BayesianOptim>(num_policies, num_features, kernel, acqui,
+                                           acqui_hyper, sigma_sq, l, k, noise, seed, 
+                                           max_samples, regionName);
+
+  }
+  else{
+    return apollo::ModelFactory::createPolicyModel(model_name, num_features, num_policies, model_params);
   }
 }
 

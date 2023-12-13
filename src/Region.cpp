@@ -306,10 +306,19 @@ Apollo::Region::Region(const int num_features,
     model_info = "Static,policy=" + policy;
   }
 
-  model = apollo::ModelFactory::createPolicyModel(model_name,
-                                                  num_features,
-                                                  num_policies,
-                                                  model_params);
+  if (model_name == "BayesianOptim") {
+    model = apollo::ModelFactory::createPolicyModel(model_name,
+                                                    num_features,
+                                                    num_policies,
+                                                    model_params,
+                                                    std::string(name));
+  }
+  else{
+    model = apollo::ModelFactory::createPolicyModel(model_name,
+                                                    num_features,
+                                                    num_policies,
+                                                    model_params);
+  }
 
   if (!modelYamlFile.empty()) model->load(modelYamlFile);
 

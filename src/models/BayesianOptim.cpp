@@ -46,10 +46,11 @@ namespace apollo
 BayesianOptim::BayesianOptim(int num_policies, int num_features,
                 std::string &kernel, std::string &acqui, 
                 double acqui_hyper, double sigma_sq, double l, 
-                int k, double whiteKernel, int seed, int max_samples)
+                int k, double whiteKernel, int seed, int max_samples,
+                std::string regionName)
   						: PolicyModel(num_policies, "BayesianOptim"),
         			      num_features(num_features), num_samples(0), 
-                          best_policy(-1), max_samples(max_samples), 
+                          best_policy(-1), max_samples(max_samples), regionName(regionName),
                           best_policy_xtime(std::numeric_limits<double>::max()){
         			      //num_features(num_features), first_execution(1) {
 
@@ -100,7 +101,7 @@ BayesianOptim::BayesianOptim(int num_policies, int num_features,
 };
 
 BayesianOptim::~BayesianOptim(){
-    boptimizer->writeGPVizFiles();
+    boptimizer->writeGPVizFiles(regionName);
     delete boptimizer;
     return;
 };
