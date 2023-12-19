@@ -9,6 +9,7 @@
 #include <string>
 
 #include "apollo/PolicyModel.h"
+#include <chrono>
 
 #include <limbo/limbo.hpp>
 
@@ -19,7 +20,12 @@ using namespace limbo;
 
 struct Params {
 #ifdef USE_NLOPT
-    struct opt_nloptnograd : public defaults::opt_nloptnograd {};
+    struct opt_nloptnograd : public defaults::opt_nloptnograd {
+        // added these in to follow limbo/src/benchmarks/limbo/bench.cpp
+        // to re-create their benchmark timing results
+        BO_PARAM(double, fun_tolerance, 1e-6);
+        BO_PARAM(double, xrel_tolerance, 1e-6);
+    };
 #else
     struct opt_gridsearch : public defaults::opt_gridsearch {};
 #endif
@@ -148,19 +154,34 @@ class CustomBOptimizer : public bayes_opt::BOptimizer<Params, A1, A2, A3, A4, A5
             //Eigen::VectorXd getNextPoint(const StateFunction& sfun, const AggregatorFunction& afun = AggregatorFunction(), bool reset=true)
             Eigen::VectorXd getNextPoint(const eval_func& sfun, const FirstElem& afun = FirstElem(), bool reset=true)
             {
-                if (reset) { this->setSeed(_seed); }
+                double timer_start, timer_end;
+                struct timespec ts;
+
+                if (reset) { 
+                    this->setSeed(_seed); 
+                    this->_init(sfun, afun, reset);
+                    if (!this->_observations.empty())
+                        _model.compute(this->_samples, this->_observations, false);
+                    else
+                        _model = model_t(eval_func::dim_in(), eval_func::dim_out());
+                }
+
+                // this is necessary here :/
+                this->_current_iteration = 0;
 
                 //std::cout << "total iters " << this->_total_iterations << std::endl;
 
-                this->_init(sfun, afun, reset);
 
-                if (!this->_observations.empty())
-                    _model.compute(this->_samples, this->_observations);
-                else
-                    _model = model_t(eval_func::dim_in(), eval_func::dim_out());
+                //clock_gettime(CLOCK_MONOTONIC, &ts);
+                //timer_start = ts.tv_sec + ts.tv_nsec / 1e9;
+
+                //clock_gettime(CLOCK_MONOTONIC, &ts);
+                //timer_end = ts.tv_sec + ts.tv_nsec / 1e9;
+                //std::cout << (timer_end - timer_start) << ",";
 
                 acqui_optimizer_t acqui_optimizer;
                 
+                // we only do one sample at a time, so we change the `while` to an `if`
                 if (!this->_stop(*this, afun)) {
                     acquisition_function_t acqui(_model, this->_current_iteration);
 
@@ -170,7 +191,16 @@ class CustomBOptimizer : public bayes_opt::BOptimizer<Params, A1, A2, A3, A4, A5
                     Eigen::VectorXd starting_point;
                     if(Params::bayes_opt_bobase::bounded()){ starting_point = tools::random_vec(eval_func::dim_in(), _bound_rng); }
                                                        else{ starting_point = tools::random_vec(eval_func::dim_in(), _unbound_rng); }
+
+                    clock_gettime(CLOCK_MONOTONIC, &ts);
+                    timer_start = ts.tv_sec + ts.tv_nsec / 1e9;
+
                     Eigen::VectorXd new_sample = acqui_optimizer(acqui_optimization, starting_point, Params::bayes_opt_bobase::bounded());
+
+                    clock_gettime(CLOCK_MONOTONIC, &ts);
+                    timer_end = ts.tv_sec + ts.tv_nsec / 1e9;
+                    std::cout << (timer_end - timer_start) << std::endl;
+
                     return new_sample;
                 }
                 return Eigen::VectorXd(eval_func::dim_out());
@@ -180,6 +210,7 @@ class CustomBOptimizer : public bayes_opt::BOptimizer<Params, A1, A2, A3, A4, A5
             //void updateModel(Eigen::VectorXd& sample, Eigen::VectorXd& val, const AggregatorFunction& afun = AggregatorFunction())
             void updateModel(Eigen::VectorXd& sample, Eigen::VectorXd& val, const FirstElem& afun = FirstElem())
             {
+
               // appends the sample and val to _samples and _observations
               this->add_new_sample(sample, val);
               this->_update_stats(*this, afun);
@@ -187,12 +218,14 @@ class CustomBOptimizer : public bayes_opt::BOptimizer<Params, A1, A2, A3, A4, A5
               // add sample and update the GP model
               _model.add_sample(this->_samples.back(), this->_observations.back());
 
-              if (Params::bayes_opt_boptimizer::hp_period() > 0
-                  && (this->_current_iteration + 1) % Params::bayes_opt_boptimizer::hp_period() == 0)
-                  _model.optimize_hyperparams();
+              // We don't do hyperparam optimization, so let's leave this out.
+              //if (Params::bayes_opt_boptimizer::hp_period() > 0
+              //    && (this->_current_iteration + 1) % Params::bayes_opt_boptimizer::hp_period() == 0)
+              //    _model.optimize_hyperparams();
 
               this->_current_iteration++;
               this->_total_iterations++;
+
             }
 
 

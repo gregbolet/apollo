@@ -112,6 +112,7 @@ int BayesianOptim::getIndex(std::vector<float> &features) {
 	// This function will simply query the BO model
     //last_point = boptimizer->getNextPoint(eval_func(), FirstElem(), first_execution);
     if((max_samples == -1) || (num_samples < max_samples)){
+        std::cout << regionName << ",0," << num_samples << ",";
         last_point = boptimizer->getNextPoint(eval_func(), FirstElem(), !num_samples);
 
         //if(first_execution){ first_execution = 0; }
@@ -135,6 +136,9 @@ void BayesianOptim::train(Apollo::Dataset &dataset){
     // Need to convert it to VectorXd format for the optimizer.
 
     //std::cout << "training samps:" << boptimizer->getNumSamples() << "\ndataset\n";
+
+    double timer_start, timer_end;
+    struct timespec ts;
 
     const auto &data = dataset.toVectorOfTuples();
 
@@ -174,7 +178,17 @@ void BayesianOptim::train(Apollo::Dataset &dataset){
 
         //std::cout << "policy " << policy << " (" << x(0) << ")" << " xtime " << y(0) << std::endl;
 
+        std::cout << regionName << ",1," << num_samples << ",";
+
+        clock_gettime(CLOCK_MONOTONIC, &ts);
+        timer_start = ts.tv_sec + ts.tv_nsec / 1e9;
+
         boptimizer->updateModel(x,y,FirstElem());
+
+        clock_gettime(CLOCK_MONOTONIC, &ts);
+        timer_end = ts.tv_sec + ts.tv_nsec / 1e9;
+        std::cout << (timer_end - timer_start) << std::endl;
+
         num_samples++;
     }
 

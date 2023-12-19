@@ -87,6 +87,8 @@ def plotGP(ax, gp, data):#, numPolicies):
     ax.set_title(regionName)
     ax.set_xlabel('Policy Index')
     ax.set_ylabel('-1 * xtime')
+    #ax.set_yscale('symlog')
+    ax. set_ylim([top10.y.mean()-0.0001, top10.y.mean()+0.00001])
     return
 
 
