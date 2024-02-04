@@ -154,8 +154,8 @@ class CustomBOptimizer : public bayes_opt::BOptimizer<Params, A1, A2, A3, A4, A5
             //Eigen::VectorXd getNextPoint(const StateFunction& sfun, const AggregatorFunction& afun = AggregatorFunction(), bool reset=true)
             Eigen::VectorXd getNextPoint(const eval_func& sfun, const FirstElem& afun = FirstElem(), bool reset=true)
             {
-                double timer_start, timer_end;
-                struct timespec ts;
+                //double timer_start, timer_end;
+                //struct timespec ts;
 
                 if (reset) { 
                     this->setSeed(_seed); 
@@ -192,14 +192,14 @@ class CustomBOptimizer : public bayes_opt::BOptimizer<Params, A1, A2, A3, A4, A5
                     if(Params::bayes_opt_bobase::bounded()){ starting_point = tools::random_vec(eval_func::dim_in(), _bound_rng); }
                                                        else{ starting_point = tools::random_vec(eval_func::dim_in(), _unbound_rng); }
 
-                    clock_gettime(CLOCK_MONOTONIC, &ts);
-                    timer_start = ts.tv_sec + ts.tv_nsec / 1e9;
+                    //clock_gettime(CLOCK_MONOTONIC, &ts);
+                    //timer_start = ts.tv_sec + ts.tv_nsec / 1e9;
 
                     Eigen::VectorXd new_sample = acqui_optimizer(acqui_optimization, starting_point, Params::bayes_opt_bobase::bounded());
 
-                    clock_gettime(CLOCK_MONOTONIC, &ts);
-                    timer_end = ts.tv_sec + ts.tv_nsec / 1e9;
-                    std::cout << (timer_end - timer_start) << std::endl;
+                    //clock_gettime(CLOCK_MONOTONIC, &ts);
+                    //timer_end = ts.tv_sec + ts.tv_nsec / 1e9;
+                    //std::cout << (timer_end - timer_start) << std::endl;
 
                     return new_sample;
                 }
@@ -799,6 +799,7 @@ private:
   // This is really ugly, but I just want something to work for now :(
   // We prefer having a working prototype, then can clean up later
 
+/*
   #undef kernel_t
   #undef acqui_t
   #undef gp_t
@@ -866,7 +867,7 @@ private:
   #undef acqui_t
   #define acqui_t acqui::GP_UCB<Params, gp_t>
   CustomBOptimizer<Params, modelfun<gp_t>, acquifun<acqui_t>, initfun<init_t>> bo_SqExp_GPUCB;
-
+*/
 
   //CustomBOptimizer<Params, modelfun< model::GP<Params, kernel_t, mean_t>>, acquifun<acqui::EI<Params, model::GP<Params, kernel_t, mean_t>>> >
   Eigen::VectorXd last_point;

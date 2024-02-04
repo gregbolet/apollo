@@ -34,6 +34,7 @@ cmake -DENABLE_MPI=OFF \
 			-DENABLE_BO=ON \
 			-DENABLE_CUDA=ON \
 			-DCMAKE_EXPORT_COMPILE_COMMANDS=1 \
+			-DCMAKE_CXX_FLAGS="--gcc-toolchain=/usr/tce/packages/gcc/gcc-11.2.1" \
 			-DLIMBO_DIR=/g/g15/bolet1/workspace/BOcpp/limbo \
 			-DNLOPT_DIR=/g/g15/bolet1/workspace/BOcpp/nlopt/build/install \
 			-DEIGEN_DIR=/g/g15/bolet1/workspace/BOcpp/eigen/eigen-3.4.0/build/install \
