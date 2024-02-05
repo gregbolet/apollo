@@ -39,9 +39,12 @@ BO_DECLARE_DYN_PARAM(double, Params::acqui_ucb, alpha);
 // This doesn't work, because they use a constexpr with delta
 //BO_DECLARE_DYN_PARAM(double, Params::acqui_gpucb, delta);
 
+std::string CustomBOptimBase::replayFileName;
+std::mutex CustomBOptimBase::replayFileMutex;
 
 namespace apollo
 {
+
 
 BayesianOptim::BayesianOptim(int num_policies, int num_features,
                 std::string &kernel, std::string &acqui, 
@@ -97,11 +100,21 @@ BayesianOptim::BayesianOptim(int num_policies, int num_features,
     }
     //boptimizer->setSeed(seed);
 
+    // if we have an empty string, set the file name
+    // For now, first region to initialize gets to make the name
+    CustomBOptimBase::replayFileMutex.lock();
+    if(CustomBOptimBase::replayFileName.size() == 0){
+        char buff[40];
+        time_t now = std::time(NULL);
+        strftime(buff, 40, "%Y-%m-%d_%H:%M:%S", std::localtime(&now));
+        CustomBOptimBase::replayFileName = std::string(buff)+".bo";
+    }
+    CustomBOptimBase::replayFileMutex.unlock();
 
 };
 
 BayesianOptim::~BayesianOptim(){
-    boptimizer->writeGPVizFiles(regionName);
+    boptimizer->writeGPVizFiles(regionName, policy_count);
     delete boptimizer;
     return;
 };

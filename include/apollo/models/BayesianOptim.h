@@ -86,6 +86,19 @@ struct eval_func {
 };
 
 
+struct CustomBOptimBase{
+    virtual int getNumSamples() = 0;
+    virtual void setSeed(int seed) = 0;
+    virtual void writeGPVizFiles(std::string regionName, int num_policies) = 0;
+    virtual void updateModel(Eigen::VectorXd& sample, Eigen::VectorXd& val, const FirstElem& afun) = 0;
+    virtual Eigen::VectorXd getNextPoint(const eval_func& sfun, const FirstElem& afun, bool reset=true) = 0;
+    CustomBOptimBase(){};
+    virtual ~CustomBOptimBase(){};
+    static std::string replayFileName;
+    static std::mutex replayFileMutex;
+};
+
+
 //using kernel_t = kernel::Exp<Params>; // AKA: RBF (Radial Basis Function)
 ///using kernel_t = kernel::SquaredExpARD<Params>;
 //using kernel_t = kernel::MaternThreeHalves<Params>;
@@ -229,7 +242,10 @@ class CustomBOptimizer : public bayes_opt::BOptimizer<Params, A1, A2, A3, A4, A5
             }
 
 
-            void writeGPVizFiles(std::string regionName){
+            // Added the mutex to make this thread safe
+            void writeGPVizFiles(std::string regionName, int num_policies){
+                CustomBOptimBase::replayFileMutex.lock();
+
                 // assume a 1D input and 1D output
                 // gp_t gp(1,1);
                 model_t gp(1,1);
@@ -244,9 +260,16 @@ class CustomBOptimizer : public bayes_opt::BOptimizer<Params, A1, A2, A3, A4, A5
                 // these are 100 equally-spaced points
                 // our GP input values are bound between 0-1
                 // we need to map these back to the target space
-                std::cout << "Writing replay/viz files for: " << regionName << std::endl;
+                std::cout << "Writing replay/viz data for: " << regionName << std::endl;
 
-                std::ofstream ofs(regionName+".bo");
+                // should eventually move the opening of a filestream out of here, to be done once
+                std::ofstream ofs(CustomBOptimBase::replayFileName, std::ofstream::app);
+                ofs << "REGION_DATA: \"" << regionName << "\" total_iters " << this->_total_iterations;
+                ofs << " num_policies " << num_policies << std::endl;
+
+                ofs << "BEGIN_GP_SAMPS" << std::endl;
+                ofs << "normIdx,mean,std,acq" << std::endl;
+                
                 int viz_samples = this->_samples.size()*10;
                 for (int i = 0; i < viz_samples; ++i) {
                     Eigen::VectorXd v = tools::make_vector(i / (float)viz_samples).array();
@@ -264,14 +287,18 @@ class CustomBOptimizer : public bayes_opt::BOptimizer<Params, A1, A2, A3, A4, A5
                     //  double mu = gp.mu(v)[0]; // mu() returns a 1-D vector
                     //  double s2 = gp.sigma(v);
                     // we write the x value, mean-value, stddev-value, and acqusition function value
-                    ofs << v.transpose() << " " << mu[0] << " " << sqrt(sigma) << " " << acq_val << std::endl;
+                    ofs << v.transpose() << "," << mu[0] << "," << sqrt(sigma) << "," << acq_val << std::endl;
                 }
 
+                ofs << std::endl << "BEGIN_OBS_DATA" << std::endl;
+                ofs << "normIdx,xtime" << std::endl;
                 // these are the points we actually sampled
-                std::ofstream ofs_data(regionName+".dat");
+                //std::ofstream ofs_data(regionName+".dat");
                 for (size_t i = 0; i < this->_samples.size(); ++i)
-                    ofs_data << this->_samples[i].transpose() << " " << this->_observations[i].transpose() << std::endl;
+                    ofs << this->_samples[i].transpose() << "," << this->_observations[i].transpose() << std::endl;
 
+                ofs << std::endl;
+                CustomBOptimBase::replayFileMutex.unlock();
                 return;
             }
 
@@ -293,15 +320,6 @@ class CustomBOptimizer : public bayes_opt::BOptimizer<Params, A1, A2, A3, A4, A5
 
 
 
-struct CustomBOptimBase{
-    virtual int getNumSamples() = 0;
-    virtual void setSeed(int seed) = 0;
-    virtual void writeGPVizFiles(std::string regionName) = 0;
-    virtual void updateModel(Eigen::VectorXd& sample, Eigen::VectorXd& val, const FirstElem& afun) = 0;
-    virtual Eigen::VectorXd getNextPoint(const eval_func& sfun, const FirstElem& afun, bool reset=true) = 0;
-    CustomBOptimBase(){};
-    virtual ~CustomBOptimBase(){};
-};
 
 
 
@@ -327,7 +345,7 @@ struct BO_SQEXP_EI : CustomBOptimBase{
         }
         int getNumSamples() {return MY_BO.getNumSamples();};
         void setSeed(int seed) {MY_BO.setSeed(seed);};
-        void writeGPVizFiles(std::string regionName){MY_BO.writeGPVizFiles(regionName);};
+        void writeGPVizFiles(std::string regionName, int num_policies){MY_BO.writeGPVizFiles(regionName, num_policies);};
         void updateModel(Eigen::VectorXd& sample, Eigen::VectorXd& val, const FirstElem& afun){
             MY_BO.updateModel(sample, val, afun);
         };
@@ -360,7 +378,7 @@ struct BO_SQEXP_UCB : CustomBOptimBase{
         }
         int getNumSamples() {return MY_BO.getNumSamples();};
         void setSeed(int seed) {MY_BO.setSeed(seed);};
-        void writeGPVizFiles(std::string regionName){MY_BO.writeGPVizFiles(regionName);};
+        void writeGPVizFiles(std::string regionName, int num_policies){MY_BO.writeGPVizFiles(regionName, num_policies);};
         void updateModel(Eigen::VectorXd& sample, Eigen::VectorXd& val, const FirstElem& afun){
             MY_BO.updateModel(sample, val, afun);
         };
@@ -395,7 +413,7 @@ struct BO_SQEXP_GPUCB : CustomBOptimBase{
         }
         int getNumSamples() {return MY_BO.getNumSamples();};
         void setSeed(int seed) {MY_BO.setSeed(seed);};
-        void writeGPVizFiles(std::string regionName){MY_BO.writeGPVizFiles(regionName);};
+        void writeGPVizFiles(std::string regionName, int num_policies){MY_BO.writeGPVizFiles(regionName, num_policies);};
         void updateModel(Eigen::VectorXd& sample, Eigen::VectorXd& val, const FirstElem& afun){
             MY_BO.updateModel(sample, val, afun);
         };
@@ -437,7 +455,7 @@ struct BO_SQEXPARD_EI : CustomBOptimBase{
         }
         int getNumSamples() {return MY_BO.getNumSamples();};
         void setSeed(int seed) {MY_BO.setSeed(seed);};
-        void writeGPVizFiles(std::string regionName){MY_BO.writeGPVizFiles(regionName);};
+        void writeGPVizFiles(std::string regionName, int num_policies){MY_BO.writeGPVizFiles(regionName, num_policies);};
         void updateModel(Eigen::VectorXd& sample, Eigen::VectorXd& val, const FirstElem& afun){
             MY_BO.updateModel(sample, val, afun);
         };
@@ -470,7 +488,7 @@ struct BO_SQEXPARD_UCB : CustomBOptimBase{
         }
         int getNumSamples() {return MY_BO.getNumSamples();};
         void setSeed(int seed) {MY_BO.setSeed(seed);};
-        void writeGPVizFiles(std::string regionName){MY_BO.writeGPVizFiles(regionName);};
+        void writeGPVizFiles(std::string regionName, int num_policies){MY_BO.writeGPVizFiles(regionName, num_policies);};
         void updateModel(Eigen::VectorXd& sample, Eigen::VectorXd& val, const FirstElem& afun){
             MY_BO.updateModel(sample, val, afun);
         };
@@ -504,7 +522,7 @@ struct BO_SQEXPARD_GPUCB : CustomBOptimBase{
         }
         int getNumSamples() {return MY_BO.getNumSamples();};
         void setSeed(int seed) {MY_BO.setSeed(seed);};
-        void writeGPVizFiles(std::string regionName){MY_BO.writeGPVizFiles(regionName);};
+        void writeGPVizFiles(std::string regionName, int num_policies){MY_BO.writeGPVizFiles(regionName, num_policies);};
         void updateModel(Eigen::VectorXd& sample, Eigen::VectorXd& val, const FirstElem& afun){
             MY_BO.updateModel(sample, val, afun);
         };
@@ -545,7 +563,7 @@ struct BO_MATERN32_EI : CustomBOptimBase{
         }
         int getNumSamples() {return MY_BO.getNumSamples();};
         void setSeed(int seed) {MY_BO.setSeed(seed);};
-        void writeGPVizFiles(std::string regionName){MY_BO.writeGPVizFiles(regionName);};
+        void writeGPVizFiles(std::string regionName, int num_policies){MY_BO.writeGPVizFiles(regionName, num_policies);};
         void updateModel(Eigen::VectorXd& sample, Eigen::VectorXd& val, const FirstElem& afun){
             MY_BO.updateModel(sample, val, afun);
         };
@@ -578,7 +596,7 @@ struct BO_MATERN32_UCB : CustomBOptimBase{
         }
         int getNumSamples() {return MY_BO.getNumSamples();};
         void setSeed(int seed) {MY_BO.setSeed(seed);};
-        void writeGPVizFiles(std::string regionName){MY_BO.writeGPVizFiles(regionName);};
+        void writeGPVizFiles(std::string regionName, int num_policies){MY_BO.writeGPVizFiles(regionName, num_policies);};
         void updateModel(Eigen::VectorXd& sample, Eigen::VectorXd& val, const FirstElem& afun){
             MY_BO.updateModel(sample, val, afun);
         };
@@ -613,7 +631,7 @@ struct BO_MATERN32_GPUCB : CustomBOptimBase{
         }
         int getNumSamples() {return MY_BO.getNumSamples();};
         void setSeed(int seed) {MY_BO.setSeed(seed);};
-        void writeGPVizFiles(std::string regionName){MY_BO.writeGPVizFiles(regionName);};
+        void writeGPVizFiles(std::string regionName, int num_policies){MY_BO.writeGPVizFiles(regionName, num_policies);};
         void updateModel(Eigen::VectorXd& sample, Eigen::VectorXd& val, const FirstElem& afun){
             MY_BO.updateModel(sample, val, afun);
         };
@@ -655,7 +673,7 @@ struct BO_MATERN52_EI : CustomBOptimBase{
         }
         int getNumSamples() {return MY_BO.getNumSamples();};
         void setSeed(int seed) {MY_BO.setSeed(seed);};
-        void writeGPVizFiles(std::string regionName){MY_BO.writeGPVizFiles(regionName);};
+        void writeGPVizFiles(std::string regionName, int num_policies){MY_BO.writeGPVizFiles(regionName, num_policies);};
         void updateModel(Eigen::VectorXd& sample, Eigen::VectorXd& val, const FirstElem& afun){
             MY_BO.updateModel(sample, val, afun);
         };
@@ -688,7 +706,7 @@ struct BO_MATERN52_UCB : CustomBOptimBase{
         }
         int getNumSamples() {return MY_BO.getNumSamples();};
         void setSeed(int seed) {MY_BO.setSeed(seed);};
-        void writeGPVizFiles(std::string regionName){MY_BO.writeGPVizFiles(regionName);};
+        void writeGPVizFiles(std::string regionName, int num_policies){MY_BO.writeGPVizFiles(regionName, num_policies);};
         void updateModel(Eigen::VectorXd& sample, Eigen::VectorXd& val, const FirstElem& afun){
             MY_BO.updateModel(sample, val, afun);
         };
@@ -723,7 +741,7 @@ struct BO_MATERN52_GPUCB : CustomBOptimBase{
         }
         int getNumSamples() {return MY_BO.getNumSamples();};
         void setSeed(int seed) {MY_BO.setSeed(seed);};
-        void writeGPVizFiles(std::string regionName){MY_BO.writeGPVizFiles(regionName);};
+        void writeGPVizFiles(std::string regionName, int num_policies){MY_BO.writeGPVizFiles(regionName, num_policies);};
         void updateModel(Eigen::VectorXd& sample, Eigen::VectorXd& val, const FirstElem& afun){
             MY_BO.updateModel(sample, val, afun);
         };
@@ -793,6 +811,8 @@ private:
   //boost::any boptimizer;
   //CustomBOptimizer boptimizer;
   CustomBOptimBase * boptimizer;
+
+  Eigen::VectorXd last_point;
 
   //void setBOptimizer(CustomBOptimizer<A,B,C,D>* optim);
 
@@ -870,7 +890,6 @@ private:
 */
 
   //CustomBOptimizer<Params, modelfun< model::GP<Params, kernel_t, mean_t>>, acquifun<acqui::EI<Params, model::GP<Params, kernel_t, mean_t>>> >
-  Eigen::VectorXd last_point;
 
 };  
 
